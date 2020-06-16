@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -31,6 +31,13 @@ export class JitEvaluator {
       createSourceMaps: boolean): {[key: string]: any} {
     const converter = new JitEmitterVisitor(reflector);
     const ctx = EmitterVisitorContext.createRoot();
+    // Ensure generated code is in strict mode
+    if (statements.length > 0 && !isUseStrictStatement(statements[0])) {
+      statements = [
+        o.literal('use strict').toStmt(),
+        ...statements,
+      ];
+    }
     converter.visitAllStatements(statements, ctx);
     converter.createReturnStmt(ctx);
     return this.evaluateCode(sourceUrl, ctx, converter.getArgs(), createSourceMaps);
@@ -49,7 +56,7 @@ export class JitEvaluator {
   evaluateCode(
       sourceUrl: string, ctx: EmitterVisitorContext, vars: {[key: string]: any},
       createSourceMap: boolean): any {
-    let fnBody = `${ctx.toSource()}\n//# sourceURL=${sourceUrl}`;
+    let fnBody = `"use strict";${ctx.toSource()}\n//# sourceURL=${sourceUrl}`;
     const fnArgNames: string[] = [];
     const fnArgValues: any[] = [];
     for (const argName in vars) {
@@ -80,7 +87,9 @@ export class JitEvaluator {
    * @param args The arguments to pass to the function being executed.
    * @returns The return value of the executed function.
    */
-  executeFunction(fn: Function, args: any[]) { return fn(...args); }
+  executeFunction(fn: Function, args: any[]) {
+    return fn(...args);
+  }
 }
 
 /**
@@ -91,7 +100,9 @@ export class JitEmitterVisitor extends AbstractJsEmitterVisitor {
   private _evalArgValues: any[] = [];
   private _evalExportedVars: string[] = [];
 
-  constructor(private reflector: CompileReflector) { super(); }
+  constructor(private reflector: CompileReflector) {
+    super();
+  }
 
   createReturnStmt(ctx: EmitterVisitorContext) {
     const stmt = new o.ReturnStatement(new o.LiteralMapExpr(this._evalExportedVars.map(
@@ -149,4 +160,9 @@ export class JitEmitterVisitor extends AbstractJsEmitterVisitor {
     }
     ctx.print(ast, this._evalArgNames[id]);
   }
+}
+
+
+function isUseStrictStatement(statement: o.Statement): boolean {
+  return statement.isEquivalent(o.literal('use strict').toStmt());
 }

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -36,11 +36,17 @@ export interface ImportRewriter {
  * `ImportRewriter` that does no rewriting.
  */
 export class NoopImportRewriter implements ImportRewriter {
-  shouldImportSymbol(symbol: string, specifier: string): boolean { return true; }
+  shouldImportSymbol(symbol: string, specifier: string): boolean {
+    return true;
+  }
 
-  rewriteSymbol(symbol: string, specifier: string): string { return symbol; }
+  rewriteSymbol(symbol: string, specifier: string): string {
+    return symbol;
+  }
 
-  rewriteSpecifier(specifier: string, inContextOfFile: string): string { return specifier; }
+  rewriteSpecifier(specifier: string, inContextOfFile: string): string {
+    return specifier;
+  }
 }
 
 /**
@@ -48,15 +54,16 @@ export class NoopImportRewriter implements ImportRewriter {
  * which they're exported from r3_symbols.
  */
 const CORE_SUPPORTED_SYMBOLS = new Map<string, string>([
-  ['defineInjectable', 'defineInjectable'],
-  ['defineInjector', 'defineInjector'],
-  ['ɵdefineNgModule', 'defineNgModule'],
-  ['ɵsetNgModuleScope', 'setNgModuleScope'],
-  ['inject', 'inject'],
+  ['ɵɵdefineInjectable', 'ɵɵdefineInjectable'],
+  ['ɵɵdefineInjector', 'ɵɵdefineInjector'],
+  ['ɵɵdefineNgModule', 'ɵɵdefineNgModule'],
+  ['ɵɵsetNgModuleScope', 'ɵɵsetNgModuleScope'],
+  ['ɵɵinject', 'ɵɵinject'],
+  ['ɵɵFactoryDef', 'ɵɵFactoryDef'],
   ['ɵsetClassMetadata', 'setClassMetadata'],
-  ['ɵInjectableDef', 'InjectableDef'],
-  ['ɵInjectorDef', 'InjectorDef'],
-  ['ɵNgModuleDefWithMeta', 'NgModuleDefWithMeta'],
+  ['ɵɵInjectableDef', 'ɵɵInjectableDef'],
+  ['ɵɵInjectorDef', 'ɵɵInjectorDef'],
+  ['ɵɵNgModuleDefWithMeta', 'ɵɵNgModuleDefWithMeta'],
   ['ɵNgModuleFactory', 'NgModuleFactory'],
 ]);
 
@@ -69,7 +76,9 @@ const CORE_MODULE = '@angular/core';
 export class R3SymbolsImportRewriter implements ImportRewriter {
   constructor(private r3SymbolsPath: string) {}
 
-  shouldImportSymbol(symbol: string, specifier: string): boolean { return true; }
+  shouldImportSymbol(symbol: string, specifier: string): boolean {
+    return true;
+  }
 
   rewriteSymbol(symbol: string, specifier: string): string {
     if (specifier !== CORE_MODULE) {
@@ -88,8 +97,8 @@ export class R3SymbolsImportRewriter implements ImportRewriter {
 
     const relativePathToR3Symbols = relativePathBetween(inContextOfFile, this.r3SymbolsPath);
     if (relativePathToR3Symbols === null) {
-      throw new Error(
-          `Failed to rewrite import inside ${CORE_MODULE}: ${inContextOfFile} -> ${this.r3SymbolsPath}`);
+      throw new Error(`Failed to rewrite import inside ${CORE_MODULE}: ${inContextOfFile} -> ${
+          this.r3SymbolsPath}`);
     }
 
     return relativePathToR3Symbols;
@@ -100,5 +109,5 @@ export function validateAndRewriteCoreSymbol(name: string): string {
   if (!CORE_SUPPORTED_SYMBOLS.has(name)) {
     throw new Error(`Importing unexpected symbol ${name} while compiling ${CORE_MODULE}`);
   }
-  return CORE_SUPPORTED_SYMBOLS.get(name) !;
+  return CORE_SUPPORTED_SYMBOLS.get(name)!;
 }

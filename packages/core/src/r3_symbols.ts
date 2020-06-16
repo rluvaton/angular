@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -21,10 +21,11 @@
  * The below symbols are used for @Injectable and @NgModule compilation.
  */
 
-export {inject} from './di/injector_compatibility';
-export {InjectableDef, InjectorDef, defineInjectable, defineInjector} from './di/interface/defs';
-export {NgModuleDef, NgModuleDefWithMeta} from './metadata/ng_module';
-export {defineNgModule} from './render3/definition';
+export {ɵɵinject} from './di/injector_compatibility';
+export {ɵɵdefineInjectable, ɵɵdefineInjector, ɵɵInjectableDef, ɵɵInjectorDef} from './di/interface/defs';
+export {NgModuleDef, ɵɵNgModuleDefWithMeta} from './metadata/ng_module';
+export {ɵɵdefineNgModule} from './render3/definition';
+export {ɵɵFactoryDef} from './render3/interfaces/definition';
 export {setClassMetadata} from './render3/metadata';
 export {NgModuleFactory} from './render3/ng_module_ref';
 

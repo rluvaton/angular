@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -9,7 +9,7 @@
 import * as chai from 'chai';
 import * as ts from 'typescript';
 
-import {SerializationOptions, publicApiInternal} from '../lib/serializer';
+import {publicApiInternal, SerializationOptions} from '../lib/serializer';
 
 const classesAndInterfaces = `
   export declare class A {
@@ -531,8 +531,8 @@ describe('unit test', () => {
     `;
     checkThrows(
         {'file.d.ts': input},
-        'file.d.ts(2,1): error: Required jsdoc tags - "@stable" - are missing on `A`.',
-        {exportTags: {required: ['stable']}});
+        'file.d.ts(2,1): error: Required jsdoc tags - One of the tags: "@stable" - must exist on `A`.',
+        {exportTags: {requireAtLeastOne: ['stable']}});
   });
 
   it('should throw on missing required jsdoc tags on fields', () => {
@@ -544,8 +544,8 @@ describe('unit test', () => {
     `;
     checkThrows(
         {'file.d.ts': input},
-        'file.d.ts(3,3): error: Required jsdoc tags - "@stable" - are missing on `value`.',
-        {memberTags: {required: ['stable']}});
+        'file.d.ts(3,3): error: Required jsdoc tags - One of the tags: "@stable" - must exist on `value`.',
+        {memberTags: {requireAtLeastOne: ['stable']}});
   });
 
   it('should throw on missing required jsdoc tags on parameters', () => {
@@ -557,8 +557,58 @@ describe('unit test', () => {
     `;
     checkThrows(
         {'file.d.ts': input},
-        'file.d.ts(3,7): error: Required jsdoc tags - "@stable" - are missing on `param`.',
-        {paramTags: {required: ['stable']}});
+        'file.d.ts(3,7): error: Required jsdoc tags - One of the tags: "@stable" - must exist on `param`.',
+        {paramTags: {requireAtLeastOne: ['stable']}});
+  });
+
+  it('should require at least one of the requireAtLeastOne tags', () => {
+    const input = `
+      /** @experimental */
+      export declare class A {
+        foo(param: number): void;
+      }
+    `;
+    checkThrows(
+        {'file.d.ts': input},
+        'file.d.ts(3,7): error: Required jsdoc tags - One of the tags: "@stable", "@foo", "@bar" - must exist on `param`.',
+        {paramTags: {requireAtLeastOne: ['stable', 'foo', 'bar']}});
+  });
+
+  it('should allow with one of the requireAtLeastOne tags found', () => {
+    const input = `
+      /**
+       * @foo
+       * @bar
+       * @stable
+       */
+      export declare class A {
+      }
+      /**
+       * @foo
+       */
+      export declare const b: string;
+      /**
+       * @bar
+       */
+      export declare var c: number;
+      /**
+       * @stable
+       */
+      export declare function d(): void;
+    `;
+    const expected = `
+    export declare class A {
+    }
+
+    export declare const b: string;
+
+    export declare var c: number;
+
+    export declare function d(): void;
+    `;
+    check(
+        {'file.d.ts': input}, expected,
+        {exportTags: {requireAtLeastOne: ['stable', 'foo', 'bar']}});
   });
 });
 
@@ -589,8 +639,9 @@ function check(
 
 function checkThrows(
     files: {[name: string]: string}, error: string, options: SerializationOptions = {}) {
-  chai.assert.throws(
-      () => { publicApiInternal(getMockHost(files), 'file.d.ts', {}, options); }, error);
+  chai.assert.throws(() => {
+    publicApiInternal(getMockHost(files), 'file.d.ts', {}, options);
+  }, error);
 }
 
 function stripExtraIndentation(text: string) {
@@ -598,7 +649,7 @@ function stripExtraIndentation(text: string) {
   // Ignore first and last new line
   lines = lines.slice(1, lines.length - 1);
   const commonIndent = lines.reduce((min, line) => {
-    const indent = /^( *)/.exec(line) ![1].length;
+    const indent = /^( *)/.exec(line)![1].length;
     // Ignore empty line
     return line.length ? Math.min(min, indent) : min;
   }, text.length);

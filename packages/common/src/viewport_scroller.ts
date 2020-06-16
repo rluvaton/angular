@@ -1,12 +1,12 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ErrorHandler, defineInjectable, inject} from '@angular/core';
+import {ErrorHandler, ɵɵdefineInjectable, ɵɵinject} from '@angular/core';
 
 import {DOCUMENT} from './dom_tokens';
 
@@ -21,9 +21,10 @@ export abstract class ViewportScroller {
   // De-sugared tree-shakable injection
   // See #23917
   /** @nocollapse */
-  static ngInjectableDef = defineInjectable({
+  static ɵprov = ɵɵdefineInjectable({
+    token: ViewportScroller,
     providedIn: 'root',
-    factory: () => new BrowserViewportScroller(inject(DOCUMENT), window, inject(ErrorHandler))
+    factory: () => new BrowserViewportScroller(ɵɵinject(DOCUMENT), window, ɵɵinject(ErrorHandler))
   });
 
   /**
@@ -185,7 +186,9 @@ export class NullViewportScroller implements ViewportScroller {
   /**
    * Empty implementation
    */
-  getScrollPosition(): [number, number] { return [0, 0]; }
+  getScrollPosition(): [number, number] {
+    return [0, 0];
+  }
 
   /**
    * Empty implementation

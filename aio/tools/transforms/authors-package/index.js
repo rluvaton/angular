@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -22,7 +22,7 @@ function createPackage(changedFile) {
     return require('./tutorial-package').createPackage(tutorialName);
   }
 
-  const gettingStartedMatch = /^aio\/content\/getting-started\/([^.]+)\.md/.exec(changedFile);
+  const gettingStartedMatch = /^aio\/content\/start\/([^.]+)\.md/.exec(changedFile);
   const gettingStartedExampleMatch = /^aio\/content\/examples\/getting-started\/([^\/]+)\//.exec(changedFile);
   if (gettingStartedMatch || gettingStartedExampleMatch) {
     const gettingStartedName = gettingStartedMatch && gettingStartedMatch[1] || 'index';

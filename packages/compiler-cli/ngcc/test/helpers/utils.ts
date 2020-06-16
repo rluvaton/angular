@@ -1,19 +1,36 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 import * as ts from 'typescript';
 
-import {AbsoluteFsPath} from '../../../src/ngtsc/path';
-import {makeProgram} from '../../../src/ngtsc/testing/in_memory_typescript';
-import {BundleProgram} from '../../src/packages/bundle_program';
-import {EntryPointFormat, EntryPointJsonProperty} from '../../src/packages/entry_point';
+import {absoluteFrom, AbsoluteFsPath, getFileSystem, NgtscCompilerHost} from '../../../src/ngtsc/file_system';
+import {TestFile} from '../../../src/ngtsc/file_system/testing';
+import {BundleProgram, makeBundleProgram} from '../../src/packages/bundle_program';
+import {NgccEntryPointConfig} from '../../src/packages/configuration';
+import {EntryPoint, EntryPointFormat} from '../../src/packages/entry_point';
 import {EntryPointBundle} from '../../src/packages/entry_point_bundle';
+import {NgccSourcesCompilerHost} from '../../src/packages/ngcc_compiler_host';
 
-export {getDeclaration} from '../../../src/ngtsc/testing/in_memory_typescript';
+export type TestConfig = Pick<NgccEntryPointConfig, 'generateDeepReexports'>;
+
+export function makeTestEntryPoint(
+    entryPointName: string, packageName: string = entryPointName, config?: TestConfig): EntryPoint {
+  return {
+    name: entryPointName,
+    path: absoluteFrom(`/node_modules/${entryPointName}`),
+    packageName,
+    packagePath: absoluteFrom(`/node_modules/${packageName}`),
+    packageJson: {name: entryPointName},
+    typings: absoluteFrom(`/node_modules/${entryPointName}/index.d.ts`),
+    compiledByAngular: true,
+    ignoreMissingDependencies: false,
+    generateDeepReexports: config !== undefined ? !!config.generateDeepReexports : false,
+  };
+}
 
 /**
  *
@@ -22,98 +39,49 @@ export {getDeclaration} from '../../../src/ngtsc/testing/in_memory_typescript';
  * @param dtsFiles The typings files to include the bundle.
  */
 export function makeTestEntryPointBundle(
-    formatProperty: EntryPointJsonProperty, format: EntryPointFormat, isCore: boolean,
-    files: {name: string, contents: string, isRoot?: boolean}[],
-    dtsFiles?: {name: string, contents: string, isRoot?: boolean}[]): EntryPointBundle {
-  const src = makeTestBundleProgram(files);
-  const dts = dtsFiles ? makeTestBundleProgram(dtsFiles) : null;
+    packageName: string, format: EntryPointFormat, isCore: boolean, srcRootNames: AbsoluteFsPath[],
+    dtsRootNames?: AbsoluteFsPath[], config?: TestConfig,
+    enableI18nLegacyMessageIdFormat = false): EntryPointBundle {
+  const entryPoint = makeTestEntryPoint(packageName, packageName, config);
+  const src = makeTestBundleProgram(srcRootNames[0], isCore);
+  const dts = dtsRootNames ?
+      makeTestDtsBundleProgram(dtsRootNames[0], entryPoint.packagePath, isCore) :
+      null;
   const isFlatCore = isCore && src.r3SymbolsFile === null;
   return {
-    formatProperty,
+    entryPoint,
     format,
-    rootDirs: [AbsoluteFsPath.fromUnchecked('/')], src, dts, isCore, isFlatCore
+    rootDirs: [absoluteFrom('/')],
+    src,
+    dts,
+    isCore,
+    isFlatCore,
+    enableI18nLegacyMessageIdFormat
   };
 }
 
-/**
- * Create a bundle program for testing.
- * @param files The source files of the bundle program.
- */
-export function makeTestBundleProgram(files: {name: string, contents: string}[]): BundleProgram {
-  const {program, options, host} = makeTestProgramInternal(...files);
-  const path = files[0].name;
-  const file = program.getSourceFile(path) !;
-  const r3SymbolsInfo = files.find(file => file.name.indexOf('r3_symbols') !== -1) || null;
-  const r3SymbolsPath = r3SymbolsInfo && r3SymbolsInfo.name;
-  const r3SymbolsFile = r3SymbolsPath && program.getSourceFile(r3SymbolsPath) || null;
-  return {program, options, host, path, file, r3SymbolsPath, r3SymbolsFile};
+export function makeTestBundleProgram(
+    path: AbsoluteFsPath, isCore: boolean = false,
+    additionalFiles?: AbsoluteFsPath[]): BundleProgram {
+  const fs = getFileSystem();
+  const entryPointPath = fs.dirname(path);
+  const rootDir = fs.dirname(entryPointPath);
+  const options: ts.CompilerOptions =
+      {allowJs: true, maxNodeModuleJsDepth: Infinity, checkJs: false, rootDir, rootDirs: [rootDir]};
+  const host = new NgccSourcesCompilerHost(fs, options, entryPointPath);
+  return makeBundleProgram(
+      fs, isCore, rootDir, path, 'r3_symbols.js', options, host, additionalFiles);
 }
 
-function makeTestProgramInternal(
-    ...files: {name: string, contents: string, isRoot?: boolean | undefined}[]): {
-  program: ts.Program,
-  host: ts.CompilerHost,
-  options: ts.CompilerOptions,
-} {
-  return makeProgram([getFakeCore(), getFakeTslib(), ...files], {allowJs: true, checkJs: false});
+export function makeTestDtsBundleProgram(
+    path: AbsoluteFsPath, packagePath: AbsoluteFsPath, isCore: boolean = false): BundleProgram {
+  const fs = getFileSystem();
+  const options = {};
+  const host = new NgtscCompilerHost(fs, options);
+  return makeBundleProgram(fs, isCore, packagePath, path, 'r3_symbols.d.ts', options, host);
 }
 
-export function makeTestProgram(
-    ...files: {name: string, contents: string, isRoot?: boolean | undefined}[]): ts.Program {
-  return makeTestProgramInternal(...files).program;
-}
-
-// TODO: unify this with the //packages/compiler-cli/test/ngtsc/fake_core package
-export function getFakeCore() {
-  return {
-    name: 'node_modules/@angular/core/index.ts',
-    contents: `
-      type FnWithArg<T> = (arg?: any) => T;
-
-      function callableClassDecorator(): FnWithArg<(clazz: any) => any> {
-        return null !;
-      }
-
-      function callableParamDecorator(): FnWithArg<(a: any, b: any, c: any) => void> {
-        return null !;
-      }
-
-      function makePropDecorator(): any {
-      }
-
-      export const Component = callableClassDecorator();
-      export const Directive = callableClassDecorator();
-      export const Injectable = callableClassDecorator();
-      export const NgModule = callableClassDecorator();
-
-      export const Input = makePropDecorator();
-
-      export const Inject = callableParamDecorator();
-      export const Self = callableParamDecorator();
-      export const SkipSelf = callableParamDecorator();
-      export const Optional = callableParamDecorator();
-
-      export class InjectionToken {
-        constructor(name: string) {}
-      }
-
-      export interface ModuleWithProviders<T = any> {}
-    `
-  };
-}
-
-export function getFakeTslib() {
-  return {
-    name: 'node_modules/tslib/index.ts',
-    contents: `
-    export function __decorate(decorators: any[], target: any, key?: string | symbol, desc?: any) {}
-    export function __param(paramIndex: number, decorator: any) {}
-    export function __metadata(metadataKey: any, metadataValue: any) {}
-    `
-  };
-}
-
-export function convertToDirectTsLibImport(filesystem: {name: string, contents: string}[]) {
+export function convertToDirectTsLibImport(filesystem: TestFile[]) {
   return filesystem.map(file => {
     const contents =
         file.contents
@@ -123,4 +91,24 @@ export function convertToDirectTsLibImport(filesystem: {name: string, contents: 
             .replace(/tslib_1\./g, '');
     return {...file, contents};
   });
+}
+
+export function convertToInlineTsLib(filesystem: TestFile[], suffix: string = '') {
+  return filesystem.map(file => {
+    const contents = file.contents
+                         .replace(`import * as tslib_1 from 'tslib';`, `
+var __decorate${suffix} = null;
+var __metadata${suffix} = null;
+var __read${suffix} = null;
+var __values${suffix} = null;
+var __param${suffix} = null;
+var __extends${suffix} = null;
+var __assign${suffix} = null;
+`).replace(/tslib_1\.([_a-z]+)/gi, '$1' + suffix.replace('$', '$$'));
+    return {...file, contents};
+  });
+}
+
+export function getRootFiles(testFiles: TestFile[]): AbsoluteFsPath[] {
+  return testFiles.filter(f => f.isRoot !== false).map(f => absoluteFrom(f.name));
 }

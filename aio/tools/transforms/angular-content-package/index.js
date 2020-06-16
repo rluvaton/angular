@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -43,7 +43,7 @@ module.exports = new Package('angular-content', [basePackage, contentPackage])
     readFilesProcessor.sourceFiles = readFilesProcessor.sourceFiles.concat([
       {
         basePath: CONTENTS_PATH,
-        include: CONTENTS_PATH + '/{getting-started,guide,tutorial}/**/*.md',
+        include: CONTENTS_PATH + '/{start,guide,tutorial}/**/*.md',
         fileReader: 'contentFileReader'
       },
       {

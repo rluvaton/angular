@@ -1,16 +1,16 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Component, Directive, ElementRef, Injector, Input, NgModule, NgZone, SimpleChanges, destroyPlatform} from '@angular/core';
+import {Component, destroyPlatform, Directive, ElementRef, Injector, Input, NgModule, NgZone, SimpleChanges} from '@angular/core';
 import {async} from '@angular/core/testing';
 import {BrowserModule} from '@angular/platform-browser';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
-import {UpgradeComponent, UpgradeModule, downgradeComponent} from '@angular/upgrade/static';
+import {downgradeComponent, UpgradeComponent, UpgradeModule} from '@angular/upgrade/static';
 
 import * as angular from '../../../src/common/src/angular1';
 import {html, withEachNg1Version} from '../../../src/common/test/helpers/common_test_helpers';
@@ -18,9 +18,64 @@ import {html, withEachNg1Version} from '../../../src/common/test/helpers/common_
 import {bootstrap} from './static_test_helpers';
 
 withEachNg1Version(() => {
-  describe('scope/component change-detection', () => {
+  describe('change-detection', () => {
     beforeEach(() => destroyPlatform());
     afterEach(() => destroyPlatform());
+
+    it('should not break if a $digest is already in progress', async(() => {
+         const element = html('<my-app></my-app>');
+
+         @Component({selector: 'my-app', template: ''})
+         class AppComponent {
+         }
+
+         @NgModule({
+           declarations: [AppComponent],
+           entryComponents: [AppComponent],
+           imports: [BrowserModule, UpgradeModule]
+         })
+         class Ng2Module {
+           ngDoBootstrap() {}
+         }
+
+         const ng1Module = angular.module_('ng1', []).directive(
+             'myApp', downgradeComponent({component: AppComponent}));
+
+         bootstrap(platformBrowserDynamic(), Ng2Module, element, ng1Module).then((upgrade) => {
+           const $rootScope = upgrade.$injector.get('$rootScope') as angular.IRootScopeService;
+           const ngZone: NgZone = upgrade.ngZone;
+
+           // Wrap in a setTimeout to ensure all boostrap operations have completed.
+           setTimeout(
+               // Run inside the Angular zone, so that operations such as emitting
+               // `onMicrotaskEmpty` do not trigger entering/existing the zone (and thus another
+               // `$digest`). This also closer simulates what would happen in a real app.
+               () => ngZone.run(() => {
+                 const digestSpy = spyOn($rootScope, '$digest').and.callThrough();
+
+                 // Step 1: Ensure `$digest` is run on `onMicrotaskEmpty`.
+                 ngZone.onMicrotaskEmpty.emit(null);
+                 expect(digestSpy).toHaveBeenCalledTimes(1);
+
+                 digestSpy.calls.reset();
+
+                 // Step 2: Cause the issue.
+                 $rootScope.$apply(() => ngZone.onMicrotaskEmpty.emit(null));
+
+                 // With the fix, `$digest` will only be run once (for `$apply()`).
+                 // Without the fix, `$digest()` would have been run an extra time
+                 // (`onMicrotaskEmpty`).
+                 expect(digestSpy).toHaveBeenCalledTimes(1);
+
+                 digestSpy.calls.reset();
+
+                 // Step 3: Ensure that `$digest()` is still executed on `onMicrotaskEmpty`.
+                 ngZone.onMicrotaskEmpty.emit(null);
+                 expect(digestSpy).toHaveBeenCalledTimes(1);
+               }),
+               0);
+         });
+       }));
 
     it('should interleave scope and component expressions', async(() => {
          const log: string[] = [];
@@ -60,7 +115,7 @@ withEachNg1Version(() => {
            ngDoBootstrap() {}
          }
 
-         const ng1Module = angular.module('ng1', [])
+         const ng1Module = angular.module_('ng1', [])
                                .directive('ng1a', () => ({template: '{{ l(\'ng1a\') }}'}))
                                .directive('ng1b', () => ({template: '{{ l(\'ng1b\') }}'}))
                                .directive('ng2', downgradeComponent({component: Ng2Component}))
@@ -84,7 +139,9 @@ withEachNg1Version(() => {
          @Component({selector: 'my-app', template: '<my-child [value]="value"></my-child>'})
          class AppComponent {
            value?: number;
-           constructor() { appComponent = this; }
+           constructor() {
+             appComponent = this;
+           }
          }
 
          @Component({
@@ -94,15 +151,18 @@ withEachNg1Version(() => {
          class ChildComponent {
            valueFromPromise?: number;
            @Input()
-           set value(v: number) { expect(NgZone.isInAngularZone()).toBe(true); }
+           set value(v: number) {
+             expect(NgZone.isInAngularZone()).toBe(true);
+           }
 
            constructor(private zone: NgZone) {}
 
            ngOnChanges(changes: SimpleChanges) {
              if (changes['value'].isFirstChange()) return;
 
-             this.zone.onMicrotaskEmpty.subscribe(
-                 () => { expect(element.textContent).toEqual('5'); });
+             this.zone.onMicrotaskEmpty.subscribe(() => {
+               expect(element.textContent).toEqual('5');
+             });
 
              // Create a micro-task to update the value to be rendered asynchronously.
              Promise.resolve().then(() => this.valueFromPromise = changes['value'].currentValue);
@@ -118,7 +178,7 @@ withEachNg1Version(() => {
            ngDoBootstrap() {}
          }
 
-         const ng1Module = angular.module('ng1', []).directive(
+         const ng1Module = angular.module_('ng1', []).directive(
              'myApp', downgradeComponent({component: AppComponent}));
 
          bootstrap(platformBrowserDynamic(), Ng2Module, element, ng1Module).then((upgrade) => {
@@ -138,7 +198,7 @@ withEachNg1Version(() => {
     //      }
 
     //      const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //      const ng1Module = angular.module('ng1', []).directive(
+    //      const ng1Module = angular.module_('ng1', []).directive(
     //          'myApp', adapter.downgradeNg2Component(AppComponent));
 
     //      const element = html('<my-app></my-app>');

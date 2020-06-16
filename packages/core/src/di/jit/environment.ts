@@ -1,14 +1,16 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
 import {Type} from '../../interface/type';
-import {inject} from '../injector_compatibility';
-import {defineInjectable, defineInjector, getInjectableDef, getInjectorDef} from '../interface/defs';
+import {isForwardRef, resolveForwardRef} from '../forward_ref';
+import {ɵɵinject, ɵɵinvalidFactoryDep} from '../injector_compatibility';
+import {getInjectableDef, getInjectorDef, ɵɵdefineInjectable, ɵɵdefineInjector} from '../interface/defs';
+
 
 
 /**
@@ -17,14 +19,23 @@ import {defineInjectable, defineInjector, getInjectableDef, getInjectorDef} from
  * This should be kept up to date with the public exports of @angular/core.
  */
 export const angularCoreDiEnv: {[name: string]: Function} = {
-  'defineInjectable': defineInjectable,
-  'defineInjector': defineInjector,
-  'inject': inject,
-  'ɵgetFactoryOf': getFactoryOf,
+  'ɵɵdefineInjectable': ɵɵdefineInjectable,
+  'ɵɵdefineInjector': ɵɵdefineInjector,
+  'ɵɵinject': ɵɵinject,
+  'ɵɵgetFactoryOf': getFactoryOf,
+  'ɵɵinvalidFactoryDep': ɵɵinvalidFactoryDep,
 };
 
-function getFactoryOf<T>(type: Type<any>): ((type: Type<T>| null) => T)|null {
+function getFactoryOf<T>(type: Type<any>): ((type?: Type<T>) => T)|null {
   const typeAny = type as any;
+
+  if (isForwardRef(type)) {
+    return (() => {
+             const factory = getFactoryOf<T>(resolveForwardRef(typeAny));
+             return factory ? factory() : null;
+           }) as any;
+  }
+
   const def = getInjectableDef<T>(typeAny) || getInjectorDef<T>(typeAny);
   if (!def || def.factory === undefined) {
     return null;

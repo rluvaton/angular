@@ -1,16 +1,15 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Component as _Component, ComponentFactoryResolver, ElementRef, InjectFlags, Injectable as _Injectable, InjectionToken, InjectorType, Provider, RendererFactory2, ViewContainerRef, defineInjectable, defineInjector, inject, ɵNgModuleDef as NgModuleDef} from '../../src/core';
+import {Component as _Component, ComponentFactoryResolver, ElementRef, Injectable as _Injectable, InjectFlags, InjectionToken, InjectorType, Provider, RendererFactory2, Type, ViewContainerRef, ɵNgModuleDef as NgModuleDef, ɵɵdefineInjectable, ɵɵdefineInjector, ɵɵinject} from '../../src/core';
 import {forwardRef} from '../../src/di/forward_ref';
 import {createInjector} from '../../src/di/r3_injector';
-import {ProvidersFeature, defineComponent, defineDirective, directiveInject, injectComponentFactoryResolver} from '../../src/render3/index';
-import {bind, container, containerRefreshEnd, containerRefreshStart, element, elementEnd, elementStart, embeddedViewEnd, embeddedViewStart, interpolation1, text, textBinding} from '../../src/render3/instructions/all';
+import {injectComponentFactoryResolver, ɵɵdefineComponent, ɵɵdefineDirective, ɵɵdirectiveInject, ɵɵelement, ɵɵelementEnd, ɵɵelementStart, ɵɵgetInheritedFactory, ɵɵProvidersFeature, ɵɵtext, ɵɵtextInterpolate1} from '../../src/render3/index';
 import {RenderFlags} from '../../src/render3/interfaces/definition';
 import {NgModuleFactory} from '../../src/render3/ng_module_ref';
 import {getInjector} from '../../src/render3/util/discovery_utils';
@@ -30,7 +29,9 @@ const Injectable: typeof _Injectable = function(...args: any[]): any {
 
 describe('providers', () => {
   describe('should support all types of Provider:', () => {
-    abstract class Greeter { abstract greet: string; }
+    abstract class Greeter {
+      abstract greet: string;
+    }
 
     const GREETER = new InjectionToken<Greeter>('greeter');
 
@@ -50,24 +51,31 @@ describe('providers', () => {
     }
 
     class GreeterProvider {
-      provide() { return 'Provided'; }
+      provide() {
+        return 'Provided';
+      }
     }
 
     @Injectable()
     class GreeterInj implements Greeter {
       public greet: string;
-      constructor(private provider: GreeterProvider) { this.greet = this.provider.provide(); }
+      constructor(private provider: GreeterProvider) {
+        this.greet = this.provider.provide();
+      }
 
-      static ngInjectableDef =
-          defineInjectable({factory: () => new GreeterInj(inject(GreeterProvider as any))});
+      static ɵprov = ɵɵdefineInjectable({
+        token: GreeterInj,
+        factory: () => new GreeterInj(ɵɵinject(GreeterProvider as any)),
+      });
     }
 
     it('TypeProvider', () => {
       expectProvidersScenario({
         parent: {
           providers: [GreeterClass],
-          componentAssertion:
-              () => { expect(directiveInject(GreeterClass).greet).toEqual('Class'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GreeterClass).greet).toEqual('Class');
+          }
         }
       });
     });
@@ -76,7 +84,9 @@ describe('providers', () => {
       expectProvidersScenario({
         parent: {
           providers: [{provide: GREETER, useValue: {greet: 'Value'}}],
-          componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Value'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Value');
+          }
         }
       });
     });
@@ -85,7 +95,9 @@ describe('providers', () => {
       expectProvidersScenario({
         parent: {
           providers: [{provide: GREETER, useClass: GreeterClass}],
-          componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Class'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Class');
+          }
         }
       });
     });
@@ -94,7 +106,9 @@ describe('providers', () => {
       expectProvidersScenario({
         parent: {
           providers: [GreeterClass, {provide: GREETER, useExisting: GreeterClass}],
-          componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Class'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Class');
+          }
         }
       });
     });
@@ -103,7 +117,9 @@ describe('providers', () => {
       expectProvidersScenario({
         parent: {
           providers: [GreeterClass, {provide: GREETER, useFactory: () => new GreeterClass()}],
-          componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Class'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Class');
+          }
         }
       });
     });
@@ -117,7 +133,9 @@ describe('providers', () => {
             {provide: MESSAGE, useValue: 'Message'},
             {provide: GREETER, useClass: GreeterDeps, deps: [MESSAGE]}
           ],
-          componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Message'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Message');
+          }
         }
       });
     });
@@ -129,8 +147,9 @@ describe('providers', () => {
             {provide: MESSAGE, useValue: 'Message'},
             {provide: GREETER, useClass: GreeterBuiltInDeps, deps: [MESSAGE, ElementRef]}
           ],
-          componentAssertion:
-              () => { expect(directiveInject(GREETER).greet).toEqual('Message from PARENT'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Message from PARENT');
+          }
         }
       });
     });
@@ -142,7 +161,9 @@ describe('providers', () => {
             {provide: MESSAGE, useValue: 'Message'},
             {provide: GREETER, useFactory: (msg: string) => new GreeterDeps(msg), deps: [MESSAGE]}
           ],
-          componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Message'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Message');
+          }
         }
       });
     });
@@ -154,12 +175,13 @@ describe('providers', () => {
             {provide: MESSAGE, useValue: 'Message'}, {
               provide: GREETER,
               useFactory: (msg: string, elementRef: ElementRef) =>
-                              new GreeterBuiltInDeps(msg, elementRef),
+                  new GreeterBuiltInDeps(msg, elementRef),
               deps: [MESSAGE, ElementRef]
             }
           ],
-          componentAssertion:
-              () => { expect(directiveInject(GREETER).greet).toEqual('Message from PARENT'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Message from PARENT');
+          }
         }
       });
     });
@@ -168,7 +190,9 @@ describe('providers', () => {
       expectProvidersScenario({
         parent: {
           providers: [GreeterProvider, {provide: GREETER, useClass: GreeterInj}],
-          componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Provided'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Provided');
+          }
         }
       });
     });
@@ -179,8 +203,9 @@ describe('providers', () => {
           expectProvidersScenario({
             parent: {
               providers: [forwardRef(() => ForLater)],
-              componentAssertion:
-                  () => { expect(directiveInject(ForLater) instanceof ForLater).toBeTruthy(); }
+              componentAssertion: () => {
+                expect(ɵɵdirectiveInject(ForLater) instanceof ForLater).toBeTruthy();
+              }
             }
           });
           done();
@@ -193,9 +218,15 @@ describe('providers', () => {
       it('ValueProvider wrapped in forwardRef', () => {
         expectProvidersScenario({
           parent: {
-            providers:
-                [{provide: GREETER, useValue: forwardRef(() => { return {greet: 'Value'}; })}],
-            componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Value'); }
+            providers: [{
+              provide: GREETER,
+              useValue: forwardRef(() => {
+                return {greet: 'Value'};
+              })
+            }],
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Value');
+            }
           }
         });
       });
@@ -204,7 +235,9 @@ describe('providers', () => {
         expectProvidersScenario({
           parent: {
             providers: [{provide: GREETER, useClass: forwardRef(() => GreeterClass)}],
-            componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Class'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Class');
+            }
           }
         });
       });
@@ -214,7 +247,9 @@ describe('providers', () => {
           parent: {
             providers:
                 [GreeterClass, {provide: GREETER, useExisting: forwardRef(() => GreeterClass)}],
-            componentAssertion: () => { expect(directiveInject(GREETER).greet).toEqual('Class'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(GREETER).greet).toEqual('Class');
+            }
           }
         });
       });
@@ -224,14 +259,13 @@ describe('providers', () => {
         expectProvidersScenario({
           parent: {
             providers: [{provide: GREETER, useValue: {greet: 'Value'}}],
-            componentAssertion:
-                () => { expect(directiveInject(forwardRef(() => GREETER)).greet).toEqual('Value'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(forwardRef(() => GREETER)).greet).toEqual('Value');
+            }
           }
         });
       });
-
     });
-
   });
 
   /*
@@ -254,7 +288,9 @@ describe('providers', () => {
         parent: {
           providers: [{provide: String, useValue: 'Message 1'}],
           directiveProviders: [{provide: String, useValue: 'Message 2'}],
-          componentAssertion: () => { expect(directiveInject(String)).toEqual('Message 2'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(String)).toEqual('Message 2');
+          }
         }
       });
     });
@@ -264,7 +300,9 @@ describe('providers', () => {
         parent: {
           providers: [{provide: String, useValue: 'Message 1'}],
           viewProviders: [{provide: String, useValue: 'Message 2'}],
-          componentAssertion: () => { expect(directiveInject(String)).toEqual('Message 2'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(String)).toEqual('Message 2');
+          }
         }
       });
     });
@@ -274,7 +312,9 @@ describe('providers', () => {
         parent: {
           directiveProviders: [{provide: String, useValue: 'Message 1'}],
           viewProviders: [{provide: String, useValue: 'Message 2'}],
-          componentAssertion: () => { expect(directiveInject(String)).toEqual('Message 2'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(String)).toEqual('Message 2');
+          }
         }
       });
     });
@@ -284,7 +324,9 @@ describe('providers', () => {
         parent: {
           directive2Providers: [{provide: String, useValue: 'Message 1'}],
           directiveProviders: [{provide: String, useValue: 'Message 2'}],
-          componentAssertion: () => { expect(directiveInject(String)).toEqual('Message 2'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(String)).toEqual('Message 2');
+          }
         }
       });
     });
@@ -294,7 +336,9 @@ describe('providers', () => {
         parent: {
           providers:
               [{provide: String, useValue: 'Message 1'}, {provide: String, useValue: 'Message 2'}],
-          componentAssertion: () => { expect(directiveInject(String)).toEqual('Message 2'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(String)).toEqual('Message 2');
+          }
         }
       });
     });
@@ -304,7 +348,9 @@ describe('providers', () => {
         parent: {
           viewProviders:
               [{provide: String, useValue: 'Message 1'}, {provide: String, useValue: 'Message 2'}],
-          componentAssertion: () => { expect(directiveInject(String)).toEqual('Message 2'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(String)).toEqual('Message 2');
+          }
         }
       });
     });
@@ -314,7 +360,9 @@ describe('providers', () => {
         parent: {
           directiveProviders:
               [{provide: String, useValue: 'Message 1'}, {provide: String, useValue: 'Message 2'}],
-          componentAssertion: () => { expect(directiveInject(String)).toEqual('Message 2'); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(String)).toEqual('Message 2');
+          }
         }
       });
     });
@@ -322,7 +370,7 @@ describe('providers', () => {
 
   describe('single', () => {
     class MyModule {
-      static ngInjectorDef = defineInjector(
+      static ɵinj = ɵɵdefineInjector(
           {factory: () => new MyModule(), providers: [{provide: String, useValue: 'From module'}]});
     }
 
@@ -330,16 +378,28 @@ describe('providers', () => {
       it('should work without providers nor viewProviders in component', () => {
         expectProvidersScenario({
           parent: {
-            componentAssertion: () => { expect(directiveInject(String)).toEqual('From module'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From module'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            }
           },
           viewChild: {
-            componentAssertion: () => { expect(directiveInject(String)).toEqual('From module'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From module'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            }
           },
           contentChild: {
-            componentAssertion: () => { expect(directiveInject(String)).toEqual('From module'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From module'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            }
           },
           ngModule: MyModule
         });
@@ -349,19 +409,28 @@ describe('providers', () => {
         expectProvidersScenario({
           parent: {
             providers: [{provide: String, useValue: 'From providers'}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From providers'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From providers'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From providers'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From providers'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            }
           },
           contentChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From providers'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From providers'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            }
           },
           ngModule: MyModule
         });
@@ -371,19 +440,28 @@ describe('providers', () => {
         expectProvidersScenario({
           parent: {
             viewProviders: [{provide: String, useValue: 'From viewProviders'}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From module'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            }
           },
           contentChild: {
-            componentAssertion: () => { expect(directiveInject(String)).toEqual('From module'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From module'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From module');
+            }
           },
           ngModule: MyModule
         });
@@ -394,45 +472,62 @@ describe('providers', () => {
           parent: {
             providers: [{provide: String, useValue: 'From providers'}],
             viewProviders: [{provide: String, useValue: 'From viewProviders'}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From providers'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            }
           },
           contentChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From providers'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From providers'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From providers');
+            }
           },
           ngModule: MyModule
         });
       });
     });
 
-    describe('with directives (order in ngComponentDef.directives matters)', () => {
+    describe('with directives (order in ɵcmp.directives matters)', () => {
       it('should work without providers nor viewProviders in component', () => {
         expectProvidersScenario({
           parent: {
             directiveProviders: [{provide: String, useValue: 'From directive'}],
             directive2Providers: [{provide: String, useValue: 'Never'}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From directive'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From directive'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           contentChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From directive'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           ngModule: MyModule
         });
@@ -444,19 +539,28 @@ describe('providers', () => {
             providers: [{provide: String, useValue: 'From providers'}],
             directiveProviders: [{provide: String, useValue: 'From directive'}],
             directive2Providers: [{provide: String, useValue: 'Never'}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From directive'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From directive'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           contentChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From directive'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           ngModule: MyModule
         });
@@ -468,20 +572,28 @@ describe('providers', () => {
             viewProviders: [{provide: String, useValue: 'From viewProviders'}],
             directiveProviders: [{provide: String, useValue: 'From directive'}],
             directive2Providers: [{provide: String, useValue: 'Never'}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            }
           },
           contentChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From directive'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           ngModule: MyModule
         });
@@ -494,20 +606,28 @@ describe('providers', () => {
             viewProviders: [{provide: String, useValue: 'From viewProviders'}],
             directiveProviders: [{provide: String, useValue: 'From directive'}],
             directive2Providers: [{provide: String, useValue: 'Never'}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual('From viewProviders'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From viewProviders');
+            }
           },
           contentChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual('From directive'); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual('From directive'); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual('From directive');
+            }
           },
           ngModule: MyModule
         });
@@ -517,7 +637,7 @@ describe('providers', () => {
 
   describe('multi', () => {
     class MyModule {
-      static ngInjectorDef = defineInjector({
+      static ɵinj = ɵɵdefineInjector({
         factory: () => new MyModule(),
         providers: [{provide: String, useValue: 'From module', multi: true}]
       });
@@ -527,16 +647,28 @@ describe('providers', () => {
       it('should work without providers nor viewProviders in component', () => {
         expectProvidersScenario({
           parent: {
-            componentAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            }
           },
           viewChild: {
-            componentAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            }
           },
           contentChild: {
-            componentAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            }
           },
           ngModule: MyModule
         });
@@ -546,22 +678,28 @@ describe('providers', () => {
         expectProvidersScenario({
           parent: {
             providers: [{provide: String, useValue: 'From providers', multi: true}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            }
           },
           contentChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            }
           },
           ngModule: MyModule
         });
@@ -571,19 +709,28 @@ describe('providers', () => {
         expectProvidersScenario({
           parent: {
             viewProviders: [{provide: String, useValue: 'From viewProviders', multi: true}],
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From viewProviders']); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From viewProviders']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            }
           },
           viewChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From viewProviders']); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From viewProviders']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From viewProviders']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From viewProviders']);
+            }
           },
           contentChild: {
-            componentAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); },
-            directiveAssertion: () => { expect(directiveInject(String)).toEqual(['From module']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From module']);
+            }
           },
           ngModule: MyModule
         });
@@ -595,57 +742,60 @@ describe('providers', () => {
             providers: [{provide: String, useValue: 'From providers', multi: true}],
             viewProviders: [{provide: String, useValue: 'From viewProviders', multi: true}],
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From providers', 'From viewProviders']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers', 'From viewProviders']);
             },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); }
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            }
           },
           viewChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From providers', 'From viewProviders']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers', 'From viewProviders']);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From providers', 'From viewProviders']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers', 'From viewProviders']);
             }
           },
           contentChild: {
-            componentAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); },
-            directiveAssertion:
-                () => { expect(directiveInject(String)).toEqual(['From providers']); }
+            componentAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            },
+            directiveAssertion: () => {
+              expect(ɵɵdirectiveInject(String)).toEqual(['From providers']);
+            }
           },
           ngModule: MyModule
         });
       });
     });
 
-    describe('with directives (order in ngComponentDef.directives matters)', () => {
+    describe('with directives (order in ɵcmp.directives matters)', () => {
       it('should work without providers nor viewProviders in component', () => {
         expectProvidersScenario({
           parent: {
             directiveProviders: [{provide: String, useValue: 'From directive 1', multi: true}],
             directive2Providers: [{provide: String, useValue: 'From directive 2', multi: true}],
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             }
           },
           viewChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             }
           },
           contentChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             }
           },
           ngModule: MyModule
@@ -659,36 +809,36 @@ describe('providers', () => {
             directiveProviders: [{provide: String, useValue: 'From directive 1', multi: true}],
             directive2Providers: [{provide: String, useValue: 'From directive 2', multi: true}],
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             }
           },
           viewChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             }
           },
           contentChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             }
@@ -704,32 +854,32 @@ describe('providers', () => {
             directiveProviders: [{provide: String, useValue: 'From directive 1', multi: true}],
             directive2Providers: [{provide: String, useValue: 'From directive 2', multi: true}],
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From viewProviders', 'From directive 2', 'From directive 1'
               ]);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             }
           },
           viewChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From viewProviders', 'From directive 2', 'From directive 1'
               ]);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From viewProviders', 'From directive 2', 'From directive 1'
               ]);
             }
           },
           contentChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
+              expect(ɵɵdirectiveInject(String)).toEqual(['From directive 2', 'From directive 1']);
             }
           },
           ngModule: MyModule
@@ -744,36 +894,36 @@ describe('providers', () => {
             directiveProviders: [{provide: String, useValue: 'From directive 1', multi: true}],
             directive2Providers: [{provide: String, useValue: 'From directive 2', multi: true}],
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From viewProviders', 'From directive 2', 'From directive 1'
               ]);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             }
           },
           viewChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From viewProviders', 'From directive 2', 'From directive 1'
               ]);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From viewProviders', 'From directive 2', 'From directive 1'
               ]);
             }
           },
           contentChild: {
             componentAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             },
             directiveAssertion: () => {
-              expect(directiveInject(String)).toEqual([
+              expect(ɵɵdirectiveInject(String)).toEqual([
                 'From providers', 'From directive 2', 'From directive 1'
               ]);
             }
@@ -788,21 +938,25 @@ describe('providers', () => {
     it('should work with root', () => {
       @Injectable({providedIn: 'root'})
       class FooForRoot {
-        static ngInjectableDef =
-            defineInjectable({factory: () => new FooForRoot(), providedIn: 'root'});
+        static ɵprov = ɵɵdefineInjectable({
+          token: FooForRoot,
+          factory: () => new FooForRoot(),
+          providedIn: 'root',
+        });
       }
 
       expectProvidersScenario({
         parent: {
-          componentAssertion:
-              () => { expect(directiveInject(FooForRoot) instanceof FooForRoot).toBeTruthy(); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(FooForRoot) instanceof FooForRoot).toBeTruthy();
+          }
         }
       });
     });
 
     it('should work with a module', () => {
       class MyModule {
-        static ngInjectorDef = defineInjector({
+        static ɵinj = ɵɵdefineInjector({
           factory: () => new MyModule(),
           providers: [{provide: String, useValue: 'From module'}]
         });
@@ -810,181 +964,21 @@ describe('providers', () => {
 
       @Injectable({providedIn: MyModule})
       class FooForModule {
-        static ngInjectableDef =
-            defineInjectable({factory: () => new FooForModule(), providedIn: MyModule});
+        static ɵprov = ɵɵdefineInjectable({
+          token: FooForModule,
+          factory: () => new FooForModule(),
+          providedIn: MyModule,
+        });
       }
 
       expectProvidersScenario({
         parent: {
-          componentAssertion:
-              () => { expect(directiveInject(FooForModule) instanceof FooForModule).toBeTruthy(); }
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(FooForModule) instanceof FooForModule).toBeTruthy();
+          }
         },
         ngModule: MyModule
       });
-    });
-  });
-
-  describe('- embedded views', () => {
-    it('should have access to viewProviders of the host component', () => {
-      @Component({
-        template: '{{s}}{{n}}',
-      })
-      class Repeated {
-        constructor(private s: String, private n: Number) {}
-
-        static ngComponentDef = defineComponent({
-          type: Repeated,
-          selectors: [['repeated']],
-          factory: () => new Repeated(directiveInject(String), directiveInject(Number)),
-          consts: 2,
-          vars: 2,
-          template: function(fs: RenderFlags, ctx: Repeated) {
-            if (fs & RenderFlags.Create) {
-              text(0);
-              text(1);
-            }
-            if (fs & RenderFlags.Update) {
-              textBinding(0, bind(ctx.s));
-              textBinding(1, bind(ctx.n));
-            }
-          }
-        });
-      }
-
-      @Component({
-        template: `<div>
-            % for (let i = 0; i < 3; i++) {
-              <repeated></repeated>
-            % }
-          </div>`,
-        providers: [{provide: Number, useValue: 1, multi: true}],
-        viewProviders:
-            [{provide: String, useValue: 'foo'}, {provide: Number, useValue: 2, multi: true}],
-      })
-      class ComponentWithProviders {
-        static ngComponentDef = defineComponent({
-          type: ComponentWithProviders,
-          selectors: [['component-with-providers']],
-          factory: () => new ComponentWithProviders(),
-          consts: 2,
-          vars: 0,
-          template: function(fs: RenderFlags, ctx: ComponentWithProviders) {
-            if (fs & RenderFlags.Create) {
-              elementStart(0, 'div');
-              { container(1); }
-              elementEnd();
-            }
-            if (fs & RenderFlags.Update) {
-              containerRefreshStart(1);
-              {
-                for (let i = 0; i < 3; i++) {
-                  let rf1 = embeddedViewStart(1, 1, 0);
-                  {
-                    if (rf1 & RenderFlags.Create) {
-                      element(0, 'repeated');
-                    }
-                  }
-                  embeddedViewEnd();
-                }
-              }
-              containerRefreshEnd();
-            }
-          },
-          features: [
-            ProvidersFeature(
-                [{provide: Number, useValue: 1, multi: true}],
-                [{provide: String, useValue: 'foo'}, {provide: Number, useValue: 2, multi: true}]),
-          ],
-          directives: [Repeated]
-        });
-      }
-
-      const fixture = new ComponentFixture(ComponentWithProviders);
-      expect(fixture.html)
-          .toEqual(
-              '<div><repeated>foo1,2</repeated><repeated>foo1,2</repeated><repeated>foo1,2</repeated></div>');
-    });
-
-    it('should have access to viewProviders of the repeated component', () => {
-      @Component({
-        template: '{{s}}{{n}}',
-        providers: [{provide: Number, useValue: 1, multi: true}],
-        viewProviders:
-            [{provide: String, useValue: 'bar'}, {provide: Number, useValue: 2, multi: true}]
-      })
-      class Repeated {
-        constructor(private s: String, private n: Number) {}
-
-        static ngComponentDef = defineComponent({
-          type: Repeated,
-          selectors: [['repeated']],
-          factory: () => new Repeated(directiveInject(String), directiveInject(Number)),
-          consts: 2,
-          vars: 2,
-          template: function(fs: RenderFlags, ctx: Repeated) {
-            if (fs & RenderFlags.Create) {
-              text(0);
-              text(1);
-            }
-            if (fs & RenderFlags.Update) {
-              textBinding(0, bind(ctx.s));
-              textBinding(1, bind(ctx.n));
-            }
-          },
-          features: [
-            ProvidersFeature(
-                [{provide: Number, useValue: 1, multi: true}],
-                [{provide: String, useValue: 'bar'}, {provide: Number, useValue: 2, multi: true}]),
-          ],
-        });
-      }
-
-      @Component({
-        template: `<div>
-            % for (let i = 0; i < 3; i++) {
-              <repeated></repeated>
-            % }
-          </div>`,
-        viewProviders: [{provide: toString, useValue: 'foo'}],
-      })
-      class ComponentWithProviders {
-        static ngComponentDef = defineComponent({
-          type: ComponentWithProviders,
-          selectors: [['component-with-providers']],
-          factory: () => new ComponentWithProviders(),
-          consts: 2,
-          vars: 0,
-          template: function(fs: RenderFlags, ctx: ComponentWithProviders) {
-            if (fs & RenderFlags.Create) {
-              elementStart(0, 'div');
-              { container(1); }
-              elementEnd();
-            }
-            if (fs & RenderFlags.Update) {
-              containerRefreshStart(1);
-              {
-                for (let i = 0; i < 3; i++) {
-                  let rf1 = embeddedViewStart(1, 1, 0);
-                  {
-                    if (rf1 & RenderFlags.Create) {
-                      element(0, 'repeated');
-                    }
-                  }
-                  embeddedViewEnd();
-                }
-              }
-              containerRefreshEnd();
-            }
-          },
-          features: [ProvidersFeature([], [{provide: String, useValue: 'foo'}])],
-          directives: [Repeated]
-        });
-      }
-
-      const fixture = new ComponentFixture(ComponentWithProviders);
-      expect(fixture.html)
-          .toEqual(
-              '<div><repeated>bar1,2</repeated><repeated>bar1,2</repeated><repeated>bar1,2</repeated></div>');
     });
   });
 
@@ -997,20 +991,21 @@ describe('providers', () => {
     class EmbeddedComponent {
       constructor(private s: String) {}
 
-      static ngComponentDef = defineComponent({
+      static ɵfac = () => new EmbeddedComponent(ɵɵdirectiveInject(String));
+      static ɵcmp = ɵɵdefineComponent({
         type: EmbeddedComponent,
         selectors: [['embedded-cmp']],
-        factory: () => new EmbeddedComponent(directiveInject(String)),
-        consts: 1,
+        decls: 1,
         vars: 1,
-        template: (rf: RenderFlags, cmp: EmbeddedComponent) => {
-          if (rf & RenderFlags.Create) {
-            text(0);
-          }
-          if (rf & RenderFlags.Update) {
-            textBinding(0, interpolation1('', cmp.s, ''));
-          }
-        }
+        template:
+            (rf: RenderFlags, cmp: EmbeddedComponent) => {
+              if (rf & RenderFlags.Create) {
+                ɵɵtext(0);
+              }
+              if (rf & RenderFlags.Update) {
+                ɵɵtextInterpolate1('', cmp.s, '');
+              }
+            }
       });
     }
 
@@ -1018,22 +1013,25 @@ describe('providers', () => {
     class HostComponent {
       constructor(public vcref: ViewContainerRef, public cfr: ComponentFactoryResolver) {}
 
-      static ngComponentDef = defineComponent({
-        type: HostComponent,
-        selectors: [['host-cmp']],
-        factory: () => hostComponent = new HostComponent(
-                     directiveInject(ViewContainerRef as any), injectComponentFactoryResolver()),
-        consts: 1,
-        vars: 0,
-        template: (rf: RenderFlags, cmp: HostComponent) => {
-          if (rf & RenderFlags.Create) {
-            text(0, 'foo');
-          }
-        },
-        features: [
-          ProvidersFeature([{provide: String, useValue: 'From host component'}]),
-        ],
-      });
+      static ɵfac = () => hostComponent = new HostComponent(
+          ɵɵdirectiveInject(ViewContainerRef as any), injectComponentFactoryResolver())
+
+          static ɵcmp = ɵɵdefineComponent({
+            type: HostComponent,
+            selectors: [['host-cmp']],
+            decls: 1,
+            vars: 0,
+            template:
+                (rf: RenderFlags, cmp: HostComponent) => {
+                  if (rf & RenderFlags.Create) {
+                    ɵɵtext(0, 'foo');
+                  }
+                },
+            features:
+                [
+                  ɵɵProvidersFeature([{provide: String, useValue: 'From host component'}]),
+                ],
+          });
     }
 
     @Component({
@@ -1043,20 +1041,22 @@ describe('providers', () => {
     class AppComponent {
       constructor() {}
 
-      static ngComponentDef = defineComponent({
+      static ɵfac = () => new AppComponent();
+      static ɵcmp = ɵɵdefineComponent({
         type: AppComponent,
         selectors: [['app-cmp']],
-        factory: () => new AppComponent(),
-        consts: 1,
+        decls: 1,
         vars: 0,
-        template: (rf: RenderFlags, cmp: AppComponent) => {
-          if (rf & RenderFlags.Create) {
-            element(0, 'host-cmp');
-          }
-        },
-        features: [
-          ProvidersFeature([{provide: String, useValue: 'From app component'}]),
-        ],
+        template:
+            (rf: RenderFlags, cmp: AppComponent) => {
+              if (rf & RenderFlags.Create) {
+                ɵɵelement(0, 'host-cmp');
+              }
+            },
+        features:
+            [
+              ɵɵProvidersFeature([{provide: String, useValue: 'From app component'}]),
+            ],
         directives: [HostComponent]
       });
     }
@@ -1065,8 +1065,8 @@ describe('providers', () => {
       const fixture = new ComponentFixture(AppComponent);
       expect(fixture.html).toEqual('<host-cmp>foo</host-cmp>');
 
-      hostComponent !.vcref.createComponent(
-          hostComponent !.cfr.resolveComponentFactory(EmbeddedComponent), undefined, {
+      hostComponent!.vcref.createComponent(
+          hostComponent!.cfr.resolveComponentFactory(EmbeddedComponent), undefined, {
             get: (token: any, notFoundValue?: any) => {
               return token === String ? 'From custom root view injector' : notFoundValue;
             }
@@ -1079,31 +1079,31 @@ describe('providers', () => {
 
     it('should not cross the root view boundary, and use the module injector if no root view injector',
        () => {
-
          const fixture = new ComponentFixture(AppComponent);
          expect(fixture.html).toEqual('<host-cmp>foo</host-cmp>');
 
          class MyAppModule {
-           static ngInjectorDef = defineInjector({
+           static ɵinj = ɵɵdefineInjector({
              factory: () => new MyAppModule(),
              imports: [],
-             providers: [
-               {provide: RendererFactory2, useValue: getRendererFactory2(document)},
-               {provide: String, useValue: 'From module injector'}
-             ]
+             providers:
+                 [
+                   {provide: RendererFactory2, useValue: getRendererFactory2(document)},
+                   {provide: String, useValue: 'From module injector'}
+                 ]
            });
-           static ngModuleDef: NgModuleDef<any> = { bootstrap: [] } as any;
+           static ɵmod: NgModuleDef<any> = {bootstrap: []} as any;
          }
          const myAppModuleFactory = new NgModuleFactory(MyAppModule);
          const ngModuleRef = myAppModuleFactory.create(null);
 
-         hostComponent !.vcref.createComponent(
-             hostComponent !.cfr.resolveComponentFactory(EmbeddedComponent), undefined,
+         hostComponent!.vcref.createComponent(
+             hostComponent!.cfr.resolveComponentFactory(EmbeddedComponent), undefined,
              {get: (token: any, notFoundValue?: any) => notFoundValue}, undefined, ngModuleRef);
          fixture.update();
          expect(fixture.html)
              .toMatch(
-                 /<host-cmp>foo<\/host-cmp><embedded-cmp _nghost-c(\d+)="">From module injector<\/embedded-cmp>/);
+                 /<host-cmp>foo<\/host-cmp><embedded-cmp _nghost-[a-z]+-c(\d+)="">From module injector<\/embedded-cmp>/);
        });
 
     it('should cross the root view boundary to the parent of the host, thanks to the default root view injector',
@@ -1111,8 +1111,8 @@ describe('providers', () => {
          const fixture = new ComponentFixture(AppComponent);
          expect(fixture.html).toEqual('<host-cmp>foo</host-cmp>');
 
-         hostComponent !.vcref.createComponent(
-             hostComponent !.cfr.resolveComponentFactory(EmbeddedComponent));
+         hostComponent!.vcref.createComponent(
+             hostComponent!.cfr.resolveComponentFactory(EmbeddedComponent));
          fixture.update();
          expect(fixture.html)
              .toEqual('<host-cmp>foo</host-cmp><embedded-cmp>From app component</embedded-cmp>');
@@ -1126,8 +1126,10 @@ describe('providers', () => {
          class MyService {
            constructor(public value: String) {}
 
-           static ngInjectableDef =
-               defineInjectable({factory: () => new MyService(inject(String))});
+           static ɵprov = ɵɵdefineInjectable({
+             token: MyService,
+             factory: () => new MyService(ɵɵinject(String)),
+           });
          }
 
          expectProvidersScenario({
@@ -1135,8 +1137,8 @@ describe('providers', () => {
              providers: [MyService, {provide: String, useValue: 'providers'}],
              viewProviders: [{provide: String, useValue: 'viewProviders'}],
              componentAssertion: () => {
-               expect(directiveInject(String)).toEqual('viewProviders');
-               expect(directiveInject(MyService).value).toEqual('providers');
+               expect(ɵɵdirectiveInject(String)).toEqual('viewProviders');
+               expect(ɵɵdirectiveInject(MyService).value).toEqual('providers');
              }
            }
          });
@@ -1144,7 +1146,10 @@ describe('providers', () => {
 
     it('should make sure that parent service does not see overrides in child directives', () => {
       class Greeter {
-        static ngInjectableDef = defineInjectable({factory: () => new Greeter(inject(String))});
+        static ɵprov = ɵɵdefineInjectable({
+          token: Greeter,
+          factory: () => new Greeter(ɵɵinject(String)),
+        });
         constructor(public greeting: String) {}
       }
 
@@ -1154,8 +1159,9 @@ describe('providers', () => {
         },
         viewChild: {
           providers: [{provide: String, useValue: 'view'}],
-          componentAssertion:
-              () => { expect(directiveInject(Greeter).greeting).toEqual('parent'); },
+          componentAssertion: () => {
+            expect(ɵɵdirectiveInject(Greeter).greeting).toEqual('parent');
+          },
         },
       });
     });
@@ -1163,7 +1169,7 @@ describe('providers', () => {
 
   describe('injection flags', () => {
     class MyModule {
-      static ngInjectorDef = defineInjector(
+      static ɵinj = ɵɵdefineInjector(
           {factory: () => new MyModule(), providers: [{provide: String, useValue: 'Module'}]});
     }
     it('should not fall through to ModuleInjector if flags limit the scope', () => {
@@ -1171,9 +1177,9 @@ describe('providers', () => {
         ngModule: MyModule,
         parent: {
           componentAssertion: () => {
-            expect(directiveInject(String)).toEqual('Module');
-            expect(directiveInject(String, InjectFlags.Optional | InjectFlags.Self)).toBeNull();
-            expect(directiveInject(String, InjectFlags.Optional | InjectFlags.Host)).toBeNull();
+            expect(ɵɵdirectiveInject(String)).toEqual('Module');
+            expect(ɵɵdirectiveInject(String, InjectFlags.Optional | InjectFlags.Self)).toBeNull();
+            expect(ɵɵdirectiveInject(String, InjectFlags.Optional | InjectFlags.Host)).toBeNull();
           }
         }
       });
@@ -1181,12 +1187,17 @@ describe('providers', () => {
   });
 
   describe('from a node without injector', () => {
-    abstract class Some { abstract location: String; }
+    abstract class Some {
+      abstract location: String;
+    }
 
     class SomeInj implements Some {
       constructor(public location: String) {}
 
-      static ngInjectableDef = defineInjectable({factory: () => new SomeInj(inject(String))});
+      static ɵprov = ɵɵdefineInjectable({
+        token: SomeInj,
+        factory: () => new SomeInj(ɵɵinject(String)),
+      });
     }
 
     @Component({
@@ -1197,22 +1208,24 @@ describe('providers', () => {
     class MyComponent {
       constructor() {}
 
-      static ngComponentDef = defineComponent({
+      static ɵfac = () => new MyComponent();
+      static ɵcmp = ɵɵdefineComponent({
         type: MyComponent,
         selectors: [['my-cmp']],
-        factory: () => new MyComponent(),
-        consts: 1,
+        decls: 1,
         vars: 0,
-        template: (rf: RenderFlags, cmp: MyComponent) => {
-          if (rf & RenderFlags.Create) {
-            element(0, 'p');
-          }
-        },
-        features: [
-          ProvidersFeature(
-              [{provide: String, useValue: 'From my component'}],
-              [{provide: Number, useValue: 123}]),
-        ],
+        template:
+            (rf: RenderFlags, cmp: MyComponent) => {
+              if (rf & RenderFlags.Create) {
+                ɵɵelement(0, 'p');
+              }
+            },
+        features:
+            [
+              ɵɵProvidersFeature(
+                  [{provide: String, useValue: 'From my component'}],
+                  [{provide: Number, useValue: 123}]),
+            ],
       });
     }
 
@@ -1224,22 +1237,25 @@ describe('providers', () => {
     class AppComponent {
       constructor() {}
 
-      static ngComponentDef = defineComponent({
+      static ɵfac = () => new AppComponent();
+      static ɵcmp = ɵɵdefineComponent({
         type: AppComponent,
         selectors: [['app-cmp']],
-        factory: () => new AppComponent(),
-        consts: 1,
+        decls: 1,
         vars: 0,
-        template: (rf: RenderFlags, cmp: AppComponent) => {
-          if (rf & RenderFlags.Create) {
-            element(0, 'my-cmp');
-          }
-        },
-        features: [
-          ProvidersFeature([
-            {provide: String, useValue: 'From app component'}, {provide: Some, useClass: SomeInj}
-          ]),
-        ],
+        template:
+            (rf: RenderFlags, cmp: AppComponent) => {
+              if (rf & RenderFlags.Create) {
+                ɵɵelement(0, 'my-cmp');
+              }
+            },
+        features:
+            [
+              ɵɵProvidersFeature([
+                {provide: String, useValue: 'From app component'},
+                {provide: Some, useClass: SomeInj}
+              ]),
+            ],
         directives: [MyComponent]
       });
     }
@@ -1267,97 +1283,125 @@ describe('providers', () => {
     });
   });
 
-  describe('lifecycles', () => {
-    it('should execute ngOnDestroy hooks on providers (and only this one)', () => {
-      const logs: string[] = [];
+  // Note: these tests check the behavior of `getInheritedFactory` specifically.
+  // Since `getInheritedFactory` is only generated in AOT, the tests can't be
+  // ported directly to TestBed while running in JIT mode.
+  describe('getInheritedFactory on class with custom decorator', () => {
+    function addFoo() {
+      return (constructor: Type<any>): any => {
+        const decoratedClass = class Extender extends constructor { foo = 'bar'; };
 
-      @Injectable()
-      class InjectableWithLifeCycleHooks {
-        ngOnChanges() { logs.push('Injectable OnChanges'); }
-        ngOnInit() { logs.push('Injectable OnInit'); }
-        ngDoCheck() { logs.push('Injectable DoCheck'); }
-        ngAfterContentInit() { logs.push('Injectable AfterContentInit'); }
-        ngAfterContentChecked() { logs.push('Injectable AfterContentChecked'); }
-        ngAfterViewInit() { logs.push('Injectable AfterViewInit'); }
-        ngAfterViewChecked() { logs.push('Injectable gAfterViewChecked'); }
-        ngOnDestroy() { logs.push('Injectable OnDestroy'); }
+        // On IE10 child classes don't inherit static properties by default. If we detect
+        // such a case, try to account for it so the tests are consistent between browsers.
+        if (Object.getPrototypeOf(decoratedClass) !== constructor) {
+          decoratedClass.prototype = constructor.prototype;
+        }
+
+        return decoratedClass;
+      };
+    }
+
+    it('should find the correct factories if a parent class has a custom decorator', () => {
+      class GrandParent {
+        static ɵfac = function GrandParent_Factory() {};
       }
 
-      @Component({template: `<span></span>`, providers: [InjectableWithLifeCycleHooks]})
-      class MyComponent {
-        constructor(foo: InjectableWithLifeCycleHooks) {}
-
-        static ngComponentDef = defineComponent({
-          type: MyComponent,
-          selectors: [['my-comp']],
-          factory: () => new MyComponent(directiveInject(InjectableWithLifeCycleHooks)),
-          consts: 1,
-          vars: 0,
-          template: (rf: RenderFlags, ctx: MyComponent) => {
-            if (rf & RenderFlags.Create) {
-              element(0, 'span');
-            }
-          },
-          features: [ProvidersFeature([InjectableWithLifeCycleHooks])]
-        });
+      @addFoo()
+      class Parent extends GrandParent {
+        static ɵfac = function Parent_Factory() {};
       }
 
-      @Component({
-        template: `
-        <div>
-        % if (ctx.condition) {
-          <my-comp></my-comp>
-        % }
-        </div>
-        `,
-      })
-      class App {
-        public condition = true;
-
-        static ngComponentDef = defineComponent({
-          type: App,
-          selectors: [['app-cmp']],
-          factory: () => new App(),
-          consts: 2,
-          vars: 0,
-          template: (rf: RenderFlags, ctx: App) => {
-            if (rf & RenderFlags.Create) {
-              elementStart(0, 'div');
-              { container(1); }
-              elementEnd();
-            }
-            if (rf & RenderFlags.Update) {
-              containerRefreshStart(1);
-              {
-                if (ctx.condition) {
-                  let rf1 = embeddedViewStart(1, 2, 1);
-                  {
-                    if (rf1 & RenderFlags.Create) {
-                      element(0, 'my-comp');
-                    }
-                  }
-                  embeddedViewEnd();
-                }
-              }
-              containerRefreshEnd();
-            }
-          },
-          directives: [MyComponent]
-        });
+      class Child extends Parent {
+        static ɵfac = function Child_Factory() {};
       }
 
-      const fixture = new ComponentFixture(App);
-      fixture.update();
-      expect(fixture.html).toEqual('<div><my-comp><span></span></my-comp></div>');
-
-      fixture.component.condition = false;
-      fixture.update();
-      expect(fixture.html).toEqual('<div></div>');
-      expect(logs).toEqual(['Injectable OnDestroy']);
+      expect(ɵɵgetInheritedFactory(Child).name).toBe('Parent_Factory');
+      expect(ɵɵgetInheritedFactory(Parent).name).toBe('GrandParent_Factory');
+      expect(ɵɵgetInheritedFactory(GrandParent).name).toBeFalsy();
     });
 
+    it('should find the correct factories if a child class has a custom decorator', () => {
+      class GrandParent {
+        static ɵfac = function GrandParent_Factory() {};
+      }
+
+      class Parent extends GrandParent {
+        static ɵfac = function Parent_Factory() {};
+      }
+
+      @addFoo()
+      class Child extends Parent {
+        static ɵfac = function Child_Factory() {};
+      }
+
+      expect(ɵɵgetInheritedFactory(Child).name).toBe('Parent_Factory');
+      expect(ɵɵgetInheritedFactory(Parent).name).toBe('GrandParent_Factory');
+      expect(ɵɵgetInheritedFactory(GrandParent).name).toBeFalsy();
+    });
+
+    it('should find the correct factories if a grandparent class has a custom decorator', () => {
+      @addFoo()
+      class GrandParent {
+        static ɵfac = function GrandParent_Factory() {};
+      }
+
+      class Parent extends GrandParent {
+        static ɵfac = function Parent_Factory() {};
+      }
+
+      class Child extends Parent {
+        static ɵfac = function Child_Factory() {};
+      }
+
+      expect(ɵɵgetInheritedFactory(Child).name).toBe('Parent_Factory');
+      expect(ɵɵgetInheritedFactory(Parent).name).toBe('GrandParent_Factory');
+      expect(ɵɵgetInheritedFactory(GrandParent).name).toBeFalsy();
+    });
+
+    it('should find the correct factories if all classes have a custom decorator', () => {
+      @addFoo()
+      class GrandParent {
+        static ɵfac = function GrandParent_Factory() {};
+      }
+
+      @addFoo()
+      class Parent extends GrandParent {
+        static ɵfac = function Parent_Factory() {};
+      }
+
+      @addFoo()
+      class Child extends Parent {
+        static ɵfac = function Child_Factory() {};
+      }
+
+      expect(ɵɵgetInheritedFactory(Child).name).toBe('Parent_Factory');
+      expect(ɵɵgetInheritedFactory(Parent).name).toBe('GrandParent_Factory');
+      expect(ɵɵgetInheritedFactory(GrandParent).name).toBeFalsy();
+    });
+
+    it('should find the correct factories if parent and grandparent classes have a custom decorator',
+       () => {
+         @addFoo()
+         class GrandParent {
+           static ɵfac = function GrandParent_Factory() {};
+         }
+
+         @addFoo()
+         class Parent extends GrandParent {
+           static ɵfac = function Parent_Factory() {};
+         }
+
+         class Child extends Parent {
+           static ɵfac = function Child_Factory() {};
+         }
+
+         expect(ɵɵgetInheritedFactory(Child).name).toBe('Parent_Factory');
+         expect(ɵɵgetInheritedFactory(Parent).name).toBe('GrandParent_Factory');
+         expect(ɵɵgetInheritedFactory(GrandParent).name).toBeFalsy();
+       });
   });
 });
+
 interface ComponentTest {
   providers?: Provider[];
   viewProviders?: Provider[];
@@ -1374,14 +1418,14 @@ function expectProvidersScenario(defs: {
   contentChild?: ComponentTest,
   ngModule?: InjectorType<any>,
 }): void {
-  function testComponentInjection<T>(def: ComponentTest | undefined, instance: T): T {
+  function testComponentInjection<T>(def: ComponentTest|undefined, instance: T): T {
     if (def) {
       def.componentAssertion && def.componentAssertion();
     }
     return instance;
   }
 
-  function testDirectiveInjection<T>(def: ComponentTest | undefined, instance: T): T {
+  function testDirectiveInjection<T>(def: ComponentTest|undefined, instance: T): T {
     if (def) {
       def.directiveAssertion && def.directiveAssertion();
     }
@@ -1389,118 +1433,130 @@ function expectProvidersScenario(defs: {
   }
 
   class ViewChildComponent {
-    static ngComponentDef = defineComponent({
+    static ɵfac = () => testComponentInjection(defs.viewChild, new ViewChildComponent());
+    static ɵcmp = ɵɵdefineComponent({
       type: ViewChildComponent,
       selectors: [['view-child']],
-      consts: 1,
+      decls: 1,
       vars: 0,
-      factory: () => testComponentInjection(defs.viewChild, new ViewChildComponent()),
-      template: function(fs: RenderFlags, ctx: ViewChildComponent) {
-        if (fs & RenderFlags.Create) {
-          text(0, 'view-child');
-        }
-      },
+      template:
+          function(fs: RenderFlags, ctx: ViewChildComponent) {
+            if (fs & RenderFlags.Create) {
+              ɵɵtext(0, 'view-child');
+            }
+          },
       features: defs.viewChild &&
-          [
-            ProvidersFeature(defs.viewChild.providers || [], defs.viewChild.viewProviders || []),
-          ],
+          [ɵɵProvidersFeature(defs.viewChild.providers || [], defs.viewChild.viewProviders || [])]
     });
   }
 
   class ViewChildDirective {
-    static ngDirectiveDef = defineDirective({
+    static ɵfac = () => testDirectiveInjection(defs.viewChild, new ViewChildDirective());
+    static ɵdir = ɵɵdefineDirective({
       type: ViewChildDirective,
       selectors: [['view-child']],
-      factory: () => testDirectiveInjection(defs.viewChild, new ViewChildDirective()),
-      features: defs.viewChild && [ProvidersFeature(defs.viewChild.directiveProviders || [])],
+      features: defs.viewChild && [ɵɵProvidersFeature(defs.viewChild.directiveProviders || [])],
     });
   }
 
   class ContentChildComponent {
-    static ngComponentDef = defineComponent({
+    static ɵfac =
+        () => {
+          return testComponentInjection(defs.contentChild, new ContentChildComponent());
+        }
+
+    static ɵcmp = ɵɵdefineComponent({
       type: ContentChildComponent,
       selectors: [['content-child']],
-      consts: 1,
+      decls: 1,
       vars: 0,
-      factory: () => testComponentInjection(defs.contentChild, new ContentChildComponent()),
-      template: function(fs: RenderFlags, ctx: ParentComponent) {
-        if (fs & RenderFlags.Create) {
-          text(0, 'content-child');
-        }
-      },
+      template:
+          function(fs: RenderFlags, ctx: ParentComponent) {
+            if (fs & RenderFlags.Create) {
+              ɵɵtext(0, 'content-child');
+            }
+          },
       features: defs.contentChild &&
-          [ProvidersFeature(
+          [ɵɵProvidersFeature(
               defs.contentChild.providers || [], defs.contentChild.viewProviders || [])],
     });
   }
 
   class ContentChildDirective {
-    static ngDirectiveDef = defineDirective({
+    static ɵfac =
+        () => {
+          return testDirectiveInjection(defs.contentChild, new ContentChildDirective());
+        }
+
+    static ɵdir = ɵɵdefineDirective({
       type: ContentChildDirective,
       selectors: [['content-child']],
-      factory: () => testDirectiveInjection(defs.contentChild, new ContentChildDirective()),
-      features: defs.contentChild && [ProvidersFeature(defs.contentChild.directiveProviders || [])],
+      features: defs.contentChild &&
+          [ɵɵProvidersFeature(defs.contentChild.directiveProviders || [])],
     });
   }
 
 
   class ParentComponent {
-    static ngComponentDef = defineComponent({
+    static ɵfac = () => testComponentInjection(defs.parent, new ParentComponent());
+    static ɵcmp = ɵɵdefineComponent({
       type: ParentComponent,
       selectors: [['parent']],
-      consts: 1,
+      decls: 1,
       vars: 0,
-      factory: () => testComponentInjection(defs.parent, new ParentComponent()),
-      template: function(fs: RenderFlags, ctx: ParentComponent) {
-        if (fs & RenderFlags.Create) {
-          element(0, 'view-child');
-        }
-      },
+      template:
+          function(fs: RenderFlags, ctx: ParentComponent) {
+            if (fs & RenderFlags.Create) {
+              ɵɵelement(0, 'view-child');
+            }
+          },
       features: defs.parent &&
-          [ProvidersFeature(defs.parent.providers || [], defs.parent.viewProviders || [])],
+          [ɵɵProvidersFeature(defs.parent.providers || [], defs.parent.viewProviders || [])],
       directives: [ViewChildComponent, ViewChildDirective]
     });
   }
 
   class ParentDirective {
-    static ngDirectiveDef = defineDirective({
+    static ɵfac = () => testDirectiveInjection(defs.parent, new ParentDirective());
+    static ɵdir = ɵɵdefineDirective({
       type: ParentDirective,
       selectors: [['parent']],
-      factory: () => testDirectiveInjection(defs.parent, new ParentDirective()),
-      features: defs.parent && [ProvidersFeature(defs.parent.directiveProviders || [])],
+      features: defs.parent && [ɵɵProvidersFeature(defs.parent.directiveProviders || [])],
     });
   }
 
   class ParentDirective2 {
-    static ngDirectiveDef = defineDirective({
+    static ɵfac = () => testDirectiveInjection(defs.parent, new ParentDirective2());
+    static ɵdir = ɵɵdefineDirective({
       type: ParentDirective2,
       selectors: [['parent']],
-      factory: () => testDirectiveInjection(defs.parent, new ParentDirective2()),
-      features: defs.parent && [ProvidersFeature(defs.parent.directive2Providers || [])],
+      features: defs.parent && [ɵɵProvidersFeature(defs.parent.directive2Providers || [])],
     });
   }
 
 
   class App {
-    static ngComponentDef = defineComponent({
+    static ɵfac = () => testComponentInjection(defs.app, new App());
+    static ɵcmp = ɵɵdefineComponent({
       type: App,
       selectors: [['app']],
-      consts: 2,
+      decls: 2,
       vars: 0,
-      factory: () => testComponentInjection(defs.app, new App()),
-      template: function(fs: RenderFlags, ctx: App) {
-        if (fs & RenderFlags.Create) {
-          elementStart(0, 'parent');
-          element(1, 'content-child');
-          elementEnd();
-        }
-      },
-      features:
-          defs.app && [ProvidersFeature(defs.app.providers || [], defs.app.viewProviders || [])],
-      directives: [
-        ParentComponent, ParentDirective2, ParentDirective, ContentChildComponent,
-        ContentChildDirective
-      ]
+      template:
+          function(fs: RenderFlags, ctx: App) {
+            if (fs & RenderFlags.Create) {
+              ɵɵelementStart(0, 'parent');
+              ɵɵelement(1, 'content-child');
+              ɵɵelementEnd();
+            }
+          },
+      features: defs.app &&
+          [ɵɵProvidersFeature(defs.app.providers || [], defs.app.viewProviders || [])],
+      directives:
+          [
+            ParentComponent, ParentDirective2, ParentDirective, ContentChildComponent,
+            ContentChildDirective
+          ]
     });
   }
 

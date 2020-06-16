@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -24,7 +24,7 @@ export function getInputNamesOfClass(
     }
 
     const inputDecorator =
-        getAngularDecorators(typeChecker, m.decorators !).find(d => d.name === 'Input');
+        getAngularDecorators(typeChecker, m.decorators!).find(d => d.name === 'Input');
 
     if (inputDecorator && hasPropertyNameText(m.name)) {
       resolvedInputSetters.push(m.name.text);
@@ -68,7 +68,8 @@ function getInputNamesFromMetadata(
   // where inputs could be declared. This is an edge case because there
   // always needs to be an object literal, but in case there isn't we just
   // want to skip the invalid decorator and return null.
-  if (!ts.isObjectLiteralExpression(decoratorCall.arguments[0])) {
+  if (decoratorCall.arguments.length !== 1 ||
+      !ts.isObjectLiteralExpression(decoratorCall.arguments[0])) {
     return null;
   }
 

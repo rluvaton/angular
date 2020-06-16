@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -40,9 +40,9 @@ export function removeKeyValueInAstObject(
       const start = prop.start.offset;
       const end = prop.end.offset;
       let length = end - start;
-      const match = content.slice(end).match(/[,\s]+/);
+      const match = content.slice(end).match(/^[,\s]+/);
       if (match) {
-        length += match.pop() !.length;
+        length += match.pop()!.length;
       }
       recorder.remove(start, length);
       if (i === node.properties.length - 1) {  // last property
@@ -60,6 +60,6 @@ export function removeKeyValueInAstObject(
 /**
  * Returns true if the specified 'node' is a JsonAstObject, false otherwise.
  */
-export function isJsonAstObject(node: JsonAstNode | null): node is JsonAstObject {
+export function isJsonAstObject(node: JsonAstNode|null): node is JsonAstObject {
   return !!node && node.kind === 'object';
 }

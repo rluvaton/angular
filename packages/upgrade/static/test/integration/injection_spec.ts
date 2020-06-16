@@ -1,12 +1,12 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {InjectionToken, Injector, NgModule, destroyPlatform} from '@angular/core';
+import {destroyPlatform, InjectionToken, Injector, NgModule} from '@angular/core';
 import {async} from '@angular/core/testing';
 import {BrowserModule} from '@angular/platform-browser';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
@@ -14,13 +14,12 @@ import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import * as angular from '../../../src/common/src/angular1';
 import {$INJECTOR, INJECTOR_KEY} from '../../../src/common/src/constants';
 import {html, withEachNg1Version} from '../../../src/common/test/helpers/common_test_helpers';
-import {UpgradeModule, downgradeInjectable, getAngularJSGlobal, setAngularJSGlobal} from '../../index';
+import {downgradeInjectable, getAngularJSGlobal, setAngularJSGlobal, UpgradeModule} from '../../index';
 
 import {bootstrap} from './static_test_helpers';
 
 withEachNg1Version(() => {
   describe('injection', () => {
-
     beforeEach(() => destroyPlatform());
     afterEach(() => destroyPlatform());
 
@@ -40,8 +39,8 @@ withEachNg1Version(() => {
          }
 
          // create the ng1 module that will import an ng2 service
-         const ng1Module =
-             angular.module('ng1Module', []).factory('ng2Service', downgradeInjectable(Ng2Service));
+         const ng1Module = angular.module_('ng1Module', [])
+                               .factory('ng2Service', downgradeInjectable(Ng2Service));
 
          bootstrap(platformBrowserDynamic(), Ng2Module, html('<div>'), ng1Module)
              .then((upgrade) => {
@@ -71,7 +70,8 @@ withEachNg1Version(() => {
          }
 
          // create the ng1 module that will import an ng2 service
-         const ng1Module = angular.module('ng1Module', []).value('ng1Service', 'ng1 service value');
+         const ng1Module =
+             angular.module_('ng1Module', []).value('ng1Service', 'ng1 service value');
 
          bootstrap(platformBrowserDynamic(), Ng2Module, html('<div>'), ng1Module)
              .then((upgrade) => {
@@ -84,7 +84,7 @@ withEachNg1Version(() => {
        async(() => {
          let runBlockTriggered = false;
 
-         const ng1Module = angular.module('ng1Module', []).run([
+         const ng1Module = angular.module_('ng1Module', []).run([
            INJECTOR_KEY,
            function(injector: Injector) {
              runBlockTriggered = true;
@@ -124,7 +124,7 @@ withEachNg1Version(() => {
            ngDoBootstrap() {}
          }
 
-         const ng1Module = angular.module('ng1Module', []);
+         const ng1Module = angular.module_('ng1Module', []);
 
          bootstrap(platformBrowserDynamic(), Ng2Module, html('<div>'), ng1Module)
              .then(upgrade => expect(wrappedBootstrapCalled).toBe(true))

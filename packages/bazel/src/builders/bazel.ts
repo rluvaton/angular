@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -8,24 +8,26 @@
 
 /// <reference types='node'/>
 
-import {Path, basename, dirname, getSystemPath, join} from '@angular-devkit/core';
-import {resolve} from '@angular-devkit/core/node';
-import {Host} from '@angular-devkit/core/src/virtual-fs/host';
 import {spawn} from 'child_process';
+import {copyFileSync, existsSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync} from 'fs';
+import {platform} from 'os';
+import {dirname, join, normalize} from 'path';
 
-export type Executable = 'bazel' | 'ibazel';
-export type Command = 'build' | 'test' | 'run' | 'coverage' | 'query';
+export type Executable = 'bazel'|'ibazel';
+export type Command = 'build'|'test'|'run'|'coverage'|'query';
 
 /**
  * Spawn the Bazel process. Trap SINGINT to make sure Bazel process is killed.
  */
 export function runBazel(
-    projectDir: Path, binary: Path, command: Command, workspaceTarget: string, flags: string[]) {
+    projectDir: string, binary: string, command: Command, workspaceTarget: string,
+    flags: string[]) {
+  projectDir = normalize(projectDir);
+  binary = normalize(binary);
   return new Promise((resolve, reject) => {
-    const buildProcess = spawn(getSystemPath(binary), [command, workspaceTarget, ...flags], {
-      cwd: getSystemPath(projectDir),
+    const buildProcess = spawn(binary, [command, workspaceTarget, ...flags], {
+      cwd: projectDir,
       stdio: 'inherit',
-      shell: false,
     });
 
     process.on('SIGINT', (signal) => {
@@ -39,7 +41,7 @@ export function runBazel(
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`${basename(binary)} failed with code ${code}.`));
+        reject(new Error(`${binary} failed with code ${code}.`));
       }
     });
   });
@@ -48,12 +50,14 @@ export function runBazel(
 /**
  * Resolves the path to `@bazel/bazel` or `@bazel/ibazel`.
  */
-export function checkInstallation(name: Executable, projectDir: Path): string {
+export function checkInstallation(name: Executable, projectDir: string): string {
+  projectDir = normalize(projectDir);
   const packageName = `@bazel/${name}`;
   try {
-    return resolve(packageName, {
-      basedir: projectDir,
+    const bazelPath = require.resolve(packageName, {
+      paths: [projectDir],
     });
+    return require(bazelPath).getNativeBinary();
   } catch (error) {
     if (error.code === 'MODULE_NOT_FOUND') {
       throw new Error(
@@ -68,14 +72,14 @@ export function checkInstallation(name: Executable, projectDir: Path): string {
 /**
  * Returns the absolute path to the template directory in `@angular/bazel`.
  */
-export async function getTemplateDir(host: Host, root: Path): Promise<Path> {
-  const packageJson = resolve('@angular/bazel', {
-    basedir: root,
-    resolvePackageJson: true,
+export function getTemplateDir(root: string): string {
+  root = normalize(root);
+  const packageJson = require.resolve('@angular/bazel/package.json', {
+    paths: [root],
   });
-  const packageDir = dirname(packageJson as Path);
+  const packageDir = dirname(packageJson);
   const templateDir = join(packageDir, 'src', 'builders', 'files');
-  if (!await host.isDirectory(templateDir).toPromise()) {
+  if (!statSync(templateDir).isDirectory()) {
     throw new Error('Could not find Bazel template directory in "@angular/bazel".');
   }
   return templateDir;
@@ -85,30 +89,67 @@ export async function getTemplateDir(host: Host, root: Path): Promise<Path> {
  * Recursively list the specified 'dir' using depth-first approach. Paths
  * returned are relative to 'dir'.
  */
-function listR(host: Host, dir: Path): Promise<Path[]> {
-  async function list(dir: Path, root: Path, results: Path[]) {
-    const paths = await host.list(dir).toPromise();
+function listR(dir: string): string[] {
+  function list(dir: string, root: string, results: string[]) {
+    const paths = readdirSync(dir);
     for (const path of paths) {
       const absPath = join(dir, path);
       const relPath = join(root, path);
-      if (await host.isFile(absPath).toPromise()) {
+      if (statSync(absPath).isFile()) {
         results.push(relPath);
       } else {
-        await list(absPath, relPath, results);
+        list(absPath, relPath, results);
       }
     }
     return results;
   }
 
-  return list(dir, '' as Path, []);
+  return list(dir, '', []);
 }
 
 /**
- * Copy the file from 'source' to 'dest'.
+ * Return the name of the lock file that is present in the specified 'root'
+ * directory. If none exists, default to creating an empty yarn.lock file.
  */
-async function copyFile(host: Host, source: Path, dest: Path) {
-  const buffer = await host.read(source).toPromise();
-  await host.write(dest, buffer).toPromise();
+function getOrCreateLockFile(root: string): 'yarn.lock'|'package-lock.json' {
+  const yarnLock = join(root, 'yarn.lock');
+  if (existsSync(yarnLock)) {
+    return 'yarn.lock';
+  }
+  const npmLock = join(root, 'package-lock.json');
+  if (existsSync(npmLock)) {
+    return 'package-lock.json';
+  }
+  // Prefer yarn if no lock file exists
+  writeFileSync(yarnLock, '');
+  return 'yarn.lock';
+}
+
+// Replace yarn_install rule with npm_install and copy from 'source' to 'dest'.
+function replaceYarnWithNpm(source: string, dest: string) {
+  const srcContent = readFileSync(source, 'utf-8');
+  const destContent = srcContent.replace(/yarn_install/g, 'npm_install')
+                          .replace('yarn_lock', 'package_lock_json')
+                          .replace('yarn.lock', 'package-lock.json');
+  writeFileSync(dest, destContent);
+}
+
+/**
+ * Disable sandbox on Mac OS by setting spawn_strategy in .bazelrc.
+ * For a hello world (ng new) application, removing the sandbox improves build
+ * time by almost 40%.
+ * ng build with sandbox: 22.0 seconds
+ * ng build without sandbox: 13.3 seconds
+ */
+function disableSandbox(source: string, dest: string) {
+  const srcContent = readFileSync(source, 'utf-8');
+  const destContent = `${srcContent}
+# Disable sandbox on Mac OS for performance reason.
+build --spawn_strategy=local
+run --spawn_strategy=local
+test --spawn_strategy=local
+`;
+  writeFileSync(dest, destContent);
 }
 
 /**
@@ -117,35 +158,43 @@ async function copyFile(host: Host, source: Path, dest: Path) {
  * copied, so that they can be deleted later.
  * Existing files in `root` will not be replaced.
  */
-export async function copyBazelFiles(host: Host, root: Path, templateDir: Path) {
-  const bazelFiles: Path[] = [];
-  const templates = await listR(host, templateDir);
+export function copyBazelFiles(root: string, templateDir: string) {
+  root = normalize(root);
+  templateDir = normalize(templateDir);
+  const bazelFiles: string[] = [];
+  const templates = listR(templateDir);
+  const useYarn = getOrCreateLockFile(root) === 'yarn.lock';
 
-  await Promise.all(templates.map(async(template) => {
+  for (const template of templates) {
     const name = template.replace('__dot__', '.').replace('.template', '');
     const source = join(templateDir, template);
     const dest = join(root, name);
     try {
-      const exists = await host.exists(dest).toPromise();
-      if (!exists) {
-        await copyFile(host, source, dest);
+      if (!existsSync(dest)) {
+        if (!useYarn && name === 'WORKSPACE') {
+          replaceYarnWithNpm(source, dest);
+        } else if (platform() === 'darwin' && name === '.bazelrc') {
+          disableSandbox(source, dest);
+        } else {
+          copyFileSync(source, dest);
+        }
         bazelFiles.push(dest);
       }
     } catch {
     }
-  }));
+  }
 
   return bazelFiles;
 }
 
 /**
- * Delete the specified 'files' and return a promise that always resolves.
+ * Delete the specified 'files'. This function never throws.
  */
-export function deleteBazelFiles(host: Host, files: Path[]) {
-  return Promise.all(files.map(async(file) => {
+export function deleteBazelFiles(files: string[]) {
+  for (const file of files) {
     try {
-      await host.delete(file).toPromise();
+      unlinkSync(file);
     } catch {
     }
-  }));
+  }
 }

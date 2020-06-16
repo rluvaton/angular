@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -16,7 +16,7 @@ const { CONTENTS_PATH } = require('../config');
 
 function createPackage(tutorialName) {
 
-  const tutorialFilePath = `${CONTENTS_PATH}/getting-started/${tutorialName}.md`;
+  const tutorialFilePath = `${CONTENTS_PATH}/start/${tutorialName}.md`;
   const tutorialFile = readFileSync(tutorialFilePath, 'utf8');
   const examples = [];
   tutorialFile.replace(/<code-(?:pane|example) [^>]*path="([^"]+)"/g, (_, path) => examples.push('examples/' + path));

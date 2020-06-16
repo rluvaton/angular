@@ -1,4 +1,4 @@
-# Copyright Google Inc. All Rights Reserved.
+# Copyright Google LLC All Rights Reserved.
 #
 # Use of this source code is governed by an MIT-style license that can be
 # found in the LICENSE file at https://angular.io/license
@@ -11,8 +11,6 @@ All Bazel rules should consume the standard dev or prod mode.
 However we need to publish this flavor on NPM, so it's necessary to be able
 to produce it.
 """
-
-load(":external.bzl", "DEFAULT_NG_COMPILER")
 
 # The provider downstream rules use to access the outputs
 ESM5Info = provider(
@@ -30,7 +28,7 @@ ESM5Info = provider(
 )
 
 def _map_closure_path(file):
-    result = file.short_path[:-len(".closure.js")]
+    result = file.short_path[:-len(".mjs")]
 
     # short_path is meant to be used when accessing runfiles in a binary, where
     # the CWD is inside the current repo. Therefore files in external repo have a
@@ -94,21 +92,18 @@ def _esm5_outputs_aspect(target, ctx):
         compiler = ctx.executable._tsc_wrapped
     elif replay_compiler_name.startswith("ngc-wrapped"):
         compiler = ctx.executable._ngc_wrapped
-
-        # BEGIN-INTERNAL
-        # If the "replay_compiler" path does not refer to "ngc_wrapped" from the "@npm" workspace,
-        # we use "ngc_wrapped" from within the Angular workspace. This is necessary because we
-        # don't have a "npm" workspace with the "@angular/bazel" NPM package installed.
-        if replay_compiler_path != ctx.executable._ngc_wrapped.short_path:
-            compiler = ctx.executable._internal_ngc_wrapped
-
-        # END-INTERNAL
     else:
         fail("Unknown replay compiler", target.typescript.replay_params.compiler.path)
 
+    inputs = [tsconfig]
+    if (type(target.typescript.replay_params.inputs) == type([])):
+        inputs.extend(target.typescript.replay_params.inputs)
+    else:
+        inputs.extend(target.typescript.replay_params.inputs.to_list())
+
     ctx.actions.run(
         progress_message = "Compiling TypeScript (ES5 with ES Modules) %s" % target.label,
-        inputs = target.typescript.replay_params.inputs + [tsconfig],
+        inputs = inputs,
         outputs = outputs,
         arguments = [tsconfig.path],
         executable = compiler,
@@ -143,14 +138,6 @@ esm5_outputs_aspect = aspect(
     # Recurse to the deps of any target we visit
     attr_aspects = ["deps"],
     attrs = {
-        # This is only used if the replay_compiler refers to the "angular" workspace. In that
-        # case we need to use "ngc_wrapped" from its source location because we can't have
-        # the "npm" workspace that has the "@angular/bazel" NPM package installed.
-        "_internal_ngc_wrapped": attr.label(
-            default = Label("//packages/bazel/src/ngc-wrapped"),
-            executable = True,
-            cfg = "host",
-        ),
         "_modify_tsconfig": attr.label(
             default = Label("//packages/bazel/src:modify_tsconfig"),
             executable = True,
@@ -161,12 +148,9 @@ esm5_outputs_aspect = aspect(
             executable = True,
             cfg = "host",
         ),
-        # This is the default "ngc_wrapped" executable that will be used to replay the compilation
-        # for ESM5 mode. The default compiler consumes "ngc_wrapped" from the "@npm" workspace.
-        # This is needed for downstream Bazel users that can have a different TypeScript
-        # version installed.
+        # Replaced with "@npm//@angular/bazel/bin:ngc-wrapped" in the published package
         "_ngc_wrapped": attr.label(
-            default = Label(DEFAULT_NG_COMPILER),
+            default = Label("//packages/bazel/src/ngc-wrapped"),
             executable = True,
             cfg = "host",
         ),

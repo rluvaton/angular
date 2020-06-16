@@ -1,15 +1,14 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Location, LocationStrategy} from '@angular/common';
+import {Location, LocationStrategy, PlatformLocation} from '@angular/common';
 import {EventEmitter, Injectable} from '@angular/core';
 import {SubscriptionLike} from 'rxjs';
-
 
 /**
  * A spy for {@link Location} that allows tests to fire simulated location events.
@@ -26,15 +25,29 @@ export class SpyLocation implements Location {
   /** @internal */
   _baseHref: string = '';
   /** @internal */
-  _platformStrategy: LocationStrategy = null !;
+  _platformStrategy: LocationStrategy = null!;
+  /** @internal */
+  _platformLocation: PlatformLocation = null!;
+  /** @internal */
+  _urlChangeListeners: ((url: string, state: unknown) => void)[] = [];
+  /** @internal */
+  _urlChangeSubscription?: SubscriptionLike;
 
-  setInitialPath(url: string) { this._history[this._historyIndex].path = url; }
+  setInitialPath(url: string) {
+    this._history[this._historyIndex].path = url;
+  }
 
-  setBaseHref(url: string) { this._baseHref = url; }
+  setBaseHref(url: string) {
+    this._baseHref = url;
+  }
 
-  path(): string { return this._history[this._historyIndex].path; }
+  path(): string {
+    return this._history[this._historyIndex].path;
+  }
 
-  private state(): string { return this._history[this._historyIndex].state; }
+  getState(): unknown {
+    return this._history[this._historyIndex].state;
+  }
 
   isCurrentPathEqualTo(path: string, query: string = ''): boolean {
     const givenPath = path.endsWith('/') ? path.substring(0, path.length - 1) : path;
@@ -100,15 +113,29 @@ export class SpyLocation implements Location {
   forward() {
     if (this._historyIndex < (this._history.length - 1)) {
       this._historyIndex++;
-      this._subject.emit({'url': this.path(), 'state': this.state(), 'pop': true});
+      this._subject.emit({'url': this.path(), 'state': this.getState(), 'pop': true});
     }
   }
 
   back() {
     if (this._historyIndex > 0) {
       this._historyIndex--;
-      this._subject.emit({'url': this.path(), 'state': this.state(), 'pop': true});
+      this._subject.emit({'url': this.path(), 'state': this.getState(), 'pop': true});
     }
+  }
+  onUrlChange(fn: (url: string, state: unknown) => void) {
+    this._urlChangeListeners.push(fn);
+
+    if (!this._urlChangeSubscription) {
+      this._urlChangeSubscription = this.subscribe(v => {
+        this._notifyUrlChangeListeners(v.url, v.state);
+      });
+    }
+  }
+
+  /** @internal */
+  _notifyUrlChangeListeners(url: string = '', state: unknown) {
+    this._urlChangeListeners.forEach(fn => fn(url, state));
   }
 
   subscribe(
@@ -117,7 +144,9 @@ export class SpyLocation implements Location {
     return this._subject.subscribe({next: onNext, error: onThrow, complete: onReturn});
   }
 
-  normalize(url: string): string { return null !; }
+  normalize(url: string): string {
+    return null!;
+  }
 }
 
 class LocationState {
